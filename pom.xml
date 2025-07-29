@@ -59,6 +59,12 @@
         <artifactId>hibernate-community-dialects</artifactId>
         <version>7.0.8.Final</version>
     </dependency>
+
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <scope>annotationProcessor</scope>
+    </dependency>
   </dependencies>
 
   <build>
