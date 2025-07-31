@@ -35,6 +35,7 @@ public class SecurityConfig {
                 
                 // BARU: Izinkan GET /api/users diakses publik
                 .requestMatchers(HttpMethod.GET, "/api/users").permitAll() 
+                .requestMatchers(HttpMethod.GET, "/api/mahasiswa").permitAll() 
                 
                 // Semua request lain selain yang di atas harus login
                 .anyRequest().authenticated()
