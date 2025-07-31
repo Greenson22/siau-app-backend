@@ -2,6 +2,7 @@ package com.sttis.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,8 +27,17 @@ public class SecurityConfig {
             
             // 2. Atur otorisasi untuk setiap request
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/users").permitAll() // Izinkan endpoint registrasi diakses publik
-                .anyRequest().authenticated() // Semua request lain harus terautentikasi (login)
+                // .requestMatchers("/api/users").permitAll() // Izinkan endpoint registrasi diakses publik
+                // .anyRequest().authenticated() // Semua request lain harus terautentikasi (login)
+
+                // Izinkan POST /api/users (untuk registrasi) diakses publik
+                .requestMatchers(HttpMethod.POST, "/api/users").permitAll() 
+                
+                // BARU: Izinkan GET /api/users diakses publik
+                .requestMatchers(HttpMethod.GET, "/api/users").permitAll() 
+                
+                // Semua request lain selain yang di atas harus login
+                .anyRequest().authenticated()
             )
             
             // 3. Aktifkan form login bawaan dari Spring Security
