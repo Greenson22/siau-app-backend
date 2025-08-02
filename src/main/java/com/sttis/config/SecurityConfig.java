@@ -27,9 +27,6 @@ public class SecurityConfig {
             
             // 2. Atur otorisasi untuk setiap request
             .authorizeHttpRequests(auth -> auth
-                // .requestMatchers("/api/users").permitAll() // Izinkan endpoint registrasi diakses publik
-                // .anyRequest().authenticated() // Semua request lain harus terautentikasi (login)
-
                 // Izinkan POST /api/users (untuk registrasi) diakses publik
                 .requestMatchers(HttpMethod.POST, "/api/users").permitAll() 
                 
@@ -41,6 +38,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/dosen").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/dosen/{id}").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/api/dosen/{id}/biodata").permitAll()
+                
+                // BARU: Izin untuk endpoint jurusan
+                .requestMatchers(HttpMethod.GET, "/api/jurusan").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/jurusan").permitAll()
                 
                 // Semua request lain selain yang di atas harus login
                 .anyRequest().authenticated()
