@@ -37,7 +37,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/users").permitAll() 
                 .requestMatchers(HttpMethod.GET, "/api/mahasiswa").permitAll() 
                 .requestMatchers(HttpMethod.GET, "/api/mahasiswa/{id}").permitAll() 
-                .requestMatchers(HttpMethod.GET, "/api/mahasiswa/{id}/biodata").permitAll() 
+                .requestMatchers(HttpMethod.PUT, "/api/mahasiswa/{id}/biodata").permitAll() 
+                .requestMatchers(HttpMethod.GET, "/api/dosen").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/dosen/{id}").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/dosen/{id}/biodata").permitAll()
                 
                 // Semua request lain selain yang di atas harus login
                 .anyRequest().authenticated()
