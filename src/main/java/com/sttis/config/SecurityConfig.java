@@ -1,6 +1,6 @@
 package com.sttis.config;
 
-import com.sttis.services.UserDetailsServiceImpl;
+// Import UserDetailsServiceImpl tidak lagi diperlukan di sini
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,11 +18,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final UserDetailsServiceImpl userDetailsService;
+    // Hapus field userDetailsService
     private final JwtRequestFilter jwtRequestFilter;
 
-    public SecurityConfig(UserDetailsServiceImpl userDetailsService, JwtRequestFilter jwtRequestFilter) {
-        this.userDetailsService = userDetailsService;
+    // Hapus parameter UserDetailsServiceImpl dari constructor
+    public SecurityConfig(JwtRequestFilter jwtRequestFilter) {
         this.jwtRequestFilter = jwtRequestFilter;
     }
 
@@ -48,7 +48,6 @@ public class SecurityConfig {
                 // Endpoint yang memerlukan autentikasi
                 .anyRequest().authenticated()
             )
-            // Menggunakan JWT, sesi tidak lagi diperlukan (stateless)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         // Tambahkan filter JWT sebelum filter Spring Security standar
