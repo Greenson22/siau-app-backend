@@ -2,10 +2,12 @@ package com.sttis.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,8 +16,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    // Kunci rahasia ini sebaiknya disimpan di application.properties
-    private final String SECRET_KEY = "SistemInformasiAkademikTerintegrasiSecretKey";
+    private final String SECRET_KEY = "SistemInformasiAkademikTerintegrasiSecretKeyYangCukupPanjangUntukKeamanan";
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -31,7 +32,11 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
+        return Jwts.parser() // .parserBuilder() menjadi .parser() di versi terbaru
+                .verifyWith(getSigningKey()) // .setSigningKey() menjadi .verifyWith()
+                .build()
+                .parseSignedClaims(token) // .parseClaimsJws() menjadi .parseSignedClaims()
+                .getPayload();
     }
 
     private Boolean isTokenExpired(String token) {
@@ -43,14 +48,29 @@ public class JwtUtil {
         return createToken(claims, userDetails.getUsername());
     }
 
+    /**
+     * Proses pembuatan token JWT dengan API jjwt versi terbaru.
+     */
     private String createToken(Map<String, Object> claims, String subject) {
-        return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // Token berlaku 10 jam
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY).compact();
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + 1000 * 60 * 60 * 10); // Token berlaku 10 jam
+
+        return Jwts.builder()
+                .claims(claims)       // Menambahkan semua custom claims dari map
+                .subject(subject)     // setSubject() -> subject()
+                .issuedAt(now)        // setIssuedAt() -> issuedAt()
+                .expiration(expiryDate) // setExpiration() -> expiration()
+                .signWith(getSigningKey()) // Hanya perlu key, algoritma otomatis
+                .compact();
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = this.SECRET_KEY.getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }
