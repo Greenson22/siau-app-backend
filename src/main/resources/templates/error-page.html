@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Terjadi Kesalahan</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; padding: 50px; background-color: #f8f9fa; color: #343a40; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { font-size: 80px; margin: 0; color: #dc3545; }
+        p { font-size: 18px; }
+        .error-details { background-color: #f1f1f1; border-left: 5px solid #dc3545; text-align: left; padding: 15px; margin-top: 20px; font-family: 'Courier New', Courier, monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 th:text="${status}">500</h1>
+        <h2 th:text="${error}">Error</h2>
+        <p>Maaf, terjadi kesalahan tak terduga pada sistem.</p>
+        <div class="error-details" th:if="${message}">
+            <strong>Detail Teknis:</strong>
+            <p th:text="${message}"></p>
+        </div>
+        <a href="/">Kembali ke Beranda</a>
+    </div>
+</body>
+</html>
