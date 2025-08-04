@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface KrsRepository extends JpaRepository<Krs, Integer> {
@@ -29,4 +30,8 @@ public interface KrsRepository extends JpaRepository<Krs, Integer> {
      * @return true jika entri sudah ada, false jika belum.
      */
     boolean existsByMahasiswaAndKelas(Mahasiswa mahasiswa, Kelas kelas);
+    
+    List<Krs> findByKelas(Kelas kelas);
+
+    Optional<Krs> findByMahasiswaAndKelas(Mahasiswa mahasiswa, Kelas kelas);
 }
