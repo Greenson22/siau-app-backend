@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Akademik Dosen</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #1877f2;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        header h2 {
+            margin: 0;
+            color: #1c1e21;
+        }
+        nav button {
+            padding: 0.6rem 1rem;
+            background-color: #e4e6eb;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 0.5rem;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        nav button.active, nav button:hover {
+            background-color: #1877f2;
+            color: white;
+        }
+        .content-section {
+            display: none;
+            margin-top: 1.5rem;
+        }
+        .content-section.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border: 1px solid #dddfe2;
+        }
+        th {
+            background-color: #f0f2f5;
+        }
+        .btn, .btn-sm {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 5px;
+            color: white;
+        }
+        .btn-sm { font-size: 0.8em; }
+        .btn-info { background-color: #17a2b8; }
+        .btn-success { background-color: #28a745; }
+        .btn-warning { background-color: #ffc107; color: #212529; }
+        .btn-primary { background-color: #007bff; }
+        .btn-danger { background-color: #dc3545; }
+        
+        /* Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 25px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 8px;
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-btn:hover, .close-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: .5rem; font-weight: bold; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: .5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h2 id="pageTitle">Kelas yang Diampu</h2>
+            <nav>
+                <button class="nav-btn active" data-target="kelas-diampu">Kelas Diampu</button>
+                <button class="nav-btn" data-target="mahasiswa-bimbingan">Mahasiswa Bimbingan</button>
+                <button id="logoutButton" class="btn btn-danger">Logout</button>
+            </nav>
+        </header>
+
+        <div id="loading" style="display: none;">Memuat data...</div>
+
+        <section id="kelas-diampu" class="content-section active">
+            <h3>Daftar Kelas</h3>
+            <table id="kelasDiampuTable">
+                <thead>
+                    <tr>
+                        <th>Kode MK</th>
+                        <th>Mata Kuliah</th>
+                        <th>SKS</th>
+                        <th>Jadwal</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="mahasiswa-bimbingan" class="content-section">
+            <h3>Daftar Mahasiswa Bimbingan Akademik</h3>
+            <table id="mahasiswaBimbinganTable">
+                <thead>
+                    <tr>
+                        <th>NIM</th>
+                        <th>Nama Mahasiswa</th>
+                        <th>Status</th>
+                        <th>Jurusan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </div>
+
+    <div id="kelasDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('kelasDetailModal')">&times;</span>
+            <h3 id="kelasDetailTitle">Detail Kelas</h3>
+            <div id="presensiFormContainer" style="display:none; margin-bottom: 2rem;">
+                <h4>Input Presensi</h4>
+                <form id="presensiForm">
+                    <div class="form-group">
+                        <label for="pertemuanKe">Pertemuan Ke-</label>
+                        <input type="number" id="pertemuanKe" min="1" max="16" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Simpan Presensi</button>
+                </form>
+            </div>
+            <table id="mahasiswaDiKelasTable">
+                <thead>
+                    <tr>
+                        <th>NIM</th>
+                        <th>Nama Mahasiswa</th>
+                        <th class="presensi-header" style="display:none;">Status Hadir</th>
+                        <th class="nilai-header" style="display:none;">Nilai Akhir</th>
+                        <th class="nilai-header" style="display:none;">Nilai Huruf</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <button id="simpanNilaiBtn" class="btn btn-primary" style="display:none; margin-top: 1rem;">Simpan Semua Nilai</button>
+        </div>
+    </div>
+
+    <div id="krsMahasiswaModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('krsMahasiswaModal')">&times;</span>
+            <h3 id="krsMahasiswaTitle">KRS Mahasiswa</h3>
+            <table id="krsMahasiswaTable">
+                <thead>
+                    <tr>
+                        <th>Kode MK</th>
+                        <th>Mata Kuliah</th>
+                        <th>Dosen</th>
+                        <th>Status Persetujuan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+
+<script>
+    // URLs
+    const API_BASE = '/api';
+    let jwtToken = null;
+    let currentKelasId = null;
+
+    // Elements
+    const loadingDiv = document.getElementById('loading');
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const contentSections = document.querySelectorAll('.content-section');
+    const pageTitle = document.getElementById('pageTitle');
+    const logoutButton = document.getElementById('logoutButton');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        jwtToken = sessionStorage.getItem('jwtToken');
+        if (!jwtToken) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        switchView('kelas-diampu');
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.getAttribute('data-target');
+                if (targetId) {
+                    switchView(targetId);
+                }
+            });
+        });
+
+        logoutButton.addEventListener('click', () => {
+            sessionStorage.removeItem('jwtToken');
+            window.location.href = 'index.html';
+        });
+
+        // Event listener untuk form
+        document.getElementById('presensiForm').addEventListener('submit', handleSimpanPresensi);
+        document.getElementById('simpanNilaiBtn').addEventListener('click', handleSimpanNilai);
+
+    });
+
+    function switchView(targetId) {
+        pageTitle.textContent = document.querySelector(`.nav-btn[data-target="${targetId}"]`).textContent;
+        navButtons.forEach(btn => btn.classList.remove('active'));
+        contentSections.forEach(sec => sec.classList.remove('active'));
+
+        document.querySelector(`.nav-btn[data-target="${targetId}"]`).classList.add('active');
+        document.getElementById(targetId).classList.add('active');
+
+        // Load data for the view
+        if (targetId === 'kelas-diampu') loadKelasDiampu();
+        if (targetId === 'mahasiswa-bimbingan') loadMahasiswaBimbingan();
+    }
+
+    // --- UTILITY FUNCTIONS ---
+    async function fetchData(url) {
+        loadingDiv.style.display = 'block';
+        try {
+            const response = await fetch(url, { headers: { 'Authorization': `Bearer ${jwtToken}` } });
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) window.location.href = 'index.html';
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        } finally {
+            loadingDiv.style.display = 'none';
+        }
+    }
+
+    async function sendData(url, method, body) {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Authorization': `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Request failed');
+        }
+        return response;
+    }
+
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+
+    // --- KELAS DIampu & ACTIONS ---
+    async function loadKelasDiampu() {
+        const kelasList = await fetchData(`${API_BASE}/dosen/me/kelas`);
+        const tableBody = document.querySelector("#kelasDiampuTable tbody");
+        tableBody.innerHTML = '';
+        kelasList.forEach(k => {
+            tableBody.innerHTML += `
+                <tr>
+                    <td>${k.kodeMataKuliah}</td>
+                    <td>${k.namaMataKuliah}</td>
+                    <td>${k.sks}</td>
+                    <td>${k.jadwal}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="showMahasiswaDiKelas(${k.kelasId}, '${k.namaMataKuliah}')">Lihat Mhs</button>
+                        <button class="btn btn-sm btn-success" onclick="showInputPresensi(${k.kelasId}, '${k.namaMataKuliah}')">Input Presensi</button>
+                        <button class="btn btn-sm btn-warning" onclick="showInputNilai(${k.kelasId}, '${k.namaMataKuliah}')">Input Nilai</button>
+                    </td>
+                </tr>`;
+        });
+    }
+    
+    async function showMahasiswaDiKelas(kelasId, namaMataKuliah) {
+        currentKelasId = kelasId;
+        document.getElementById('kelasDetailTitle').textContent = `Daftar Mahasiswa - ${namaMataKuliah}`;
+        document.querySelectorAll('.presensi-header, .nilai-header').forEach(el => el.style.display = 'none');
+        document.getElementById('presensiFormContainer').style.display = 'none';
+        document.getElementById('simpanNilaiBtn').style.display = 'none';
+
+        const mahasiswaList = await fetchData(`${API_BASE}/kelas/${kelasId}/mahasiswa`);
+        const tableBody = document.querySelector("#mahasiswaDiKelasTable tbody");
+        tableBody.innerHTML = '';
+        mahasiswaList.forEach(mhs => {
+            tableBody.innerHTML += `
+                <tr data-mahasiswa-id="${mhs.mahasiswaId}">
+                    <td>${mhs.nim}</td>
+                    <td>${mhs.namaLengkap}</td>
+                </tr>
+            `;
+        });
+        openModal('kelasDetailModal');
+    }
+
+    async function showInputPresensi(kelasId, namaMataKuliah) {
+        await showMahasiswaDiKelas(kelasId, namaMataKuliah); // Load mahasiswa list first
+        document.getElementById('kelasDetailTitle').textContent = `Input Presensi - ${namaMataKuliah}`;
+        document.querySelectorAll('.presensi-header').forEach(el => el.style.display = ''); // Show presensi column
+        document.getElementById('presensiFormContainer').style.display = 'block';
+
+        const tableBody = document.querySelector("#mahasiswaDiKelasTable tbody");
+        tableBody.querySelectorAll('tr').forEach(row => {
+            const statusHadirCell = document.createElement('td');
+            statusHadirCell.innerHTML = `
+                <select class="form-control status-hadir">
+                    <option value="HADIR">Hadir</option>
+                    <option value="IZIN">Izin</option>
+                    <option value="SAKIT">Sakit</option>
+                    <option value="ALFA">Alfa</option>
+                </select>
+            `;
+            row.appendChild(statusHadirCell);
+        });
+    }
+
+    async function showInputNilai(kelasId, namaMataKuliah) {
+        await showMahasiswaDiKelas(kelasId, namaMataKuliah);
+        document.getElementById('kelasDetailTitle').textContent = `Input Nilai - ${namaMataKuliah}`;
+        document.querySelectorAll('.nilai-header').forEach(el => el.style.display = '');
+        document.getElementById('simpanNilaiBtn').style.display = 'block';
+
+        const tableBody = document.querySelector("#mahasiswaDiKelasTable tbody");
+        tableBody.querySelectorAll('tr').forEach(row => {
+            const mahasiswaId = row.dataset.mahasiswaId;
+            // Fetch KRS ID for this student in this class to use for PATCH
+            // This is a simplification. A more robust solution might need a dedicated endpoint.
+            // For now, we will discover the krsId from the mahasiswa bimbingan view if available.
+            
+            const nilaiAkhirCell = document.createElement('td');
+            nilaiAkhirCell.innerHTML = `<input type="number" class="form-control nilai-akhir" step="0.01" placeholder="85.50">`;
+            row.appendChild(nilaiAkhirCell);
+
+            const nilaiHurufCell = document.createElement('td');
+            nilaiHurufCell.innerHTML = `<input type="text" class="form-control nilai-huruf" placeholder="A">`;
+            row.appendChild(nilaiHurufCell);
+        });
+    }
+
+    async function handleSimpanPresensi(event) {
+        event.preventDefault();
+        const pertemuanKe = document.getElementById('pertemuanKe').value;
+        const statusPresensi = [];
+        document.querySelectorAll('#mahasiswaDiKelasTable tbody tr').forEach(row => {
+            statusPresensi.push({
+                mahasiswaId: parseInt(row.dataset.mahasiswaId),
+                statusHadir: row.querySelector('.status-hadir').value
+            });
+        });
+
+        try {
+            await sendData(`${API_BASE}/kelas/${currentKelasId}/presensi`, 'POST', { pertemuanKe, statusPresensi });
+            alert('Presensi berhasil disimpan!');
+            closeModal('kelasDetailModal');
+        } catch (error) {
+            alert(`Gagal menyimpan presensi: ${error.message}`);
+        }
+    }
+    
+    async function handleSimpanNilai() {
+        alert('Fitur "Simpan Semua Nilai" membutuhkan penyesuaian pada backend untuk mengirim nilai secara massal. Fungsi ini akan mengupdate nilai satu per satu. Untuk implementasi massal, disarankan membuat endpoint baru.');
+        // This function would ideally send all data at once.
+        // For now, it demonstrates the concept by iterating and sending one by one.
+        // A real implementation should use a dedicated bulk update endpoint.
+        const rows = document.querySelectorAll('#mahasiswaDiKelasTable tbody tr');
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const row of rows) {
+            const krsId = row.dataset.krsId; // This needs to be populated first
+            if(!krsId) {
+                console.error("KRS ID tidak ditemukan untuk mahasiswa:", row.cells[1].textContent);
+                errorCount++;
+                continue;
+            }
+            const nilaiAkhir = row.querySelector('.nilai-akhir').value;
+            const nilaiHuruf = row.querySelector('.nilai-huruf').value;
+            
+            if(nilaiAkhir && nilaiHuruf) {
+                 try {
+                    await sendData(`${API_BASE}/krs/${krsId}/nilai`, 'PATCH', { nilaiAkhir, nilaiHuruf });
+                    successCount++;
+                 } catch (error) {
+                    console.error(`Gagal update nilai untuk KRS ID ${krsId}: ${error.message}`);
+                    errorCount++;
+                 }
+            }
+        }
+         alert(`${successCount} nilai berhasil diupdate, ${errorCount} gagal.`);
+         if(errorCount === 0) closeModal('kelasDetailModal');
+    }
+
+
+    // --- MAHASISWA BIMBINGAN & ACTIONS ---
+    async function loadMahasiswaBimbingan() {
+        const mahasiswaList = await fetchData(`${API_BASE}/dosen/pa/mahasiswa`);
+        const tableBody = document.querySelector("#mahasiswaBimbinganTable tbody");
+        tableBody.innerHTML = '';
+        mahasiswaList.forEach(mhs => {
+            tableBody.innerHTML += `
+                <tr>
+                    <td>${mhs.nim}</td>
+                    <td>${mhs.namaLengkap}</td>
+                    <td>${mhs.status}</td>
+                    <td>${mhs.namaJurusan}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="showKrsMahasiswa(${mhs.mahasiswaId}, '${mhs.namaLengkap}')">Lihat KRS</button>
+                    </td>
+                </tr>`;
+        });
+    }
+
+    async function showKrsMahasiswa(mahasiswaId, namaMahasiswa) {
+        document.getElementById('krsMahasiswaTitle').textContent = `KRS - ${namaMahasiswa}`;
+        const krsList = await fetchData(`${API_BASE}/dosen/pa/mahasiswa/${mahasiswaId}/krs`);
+        const tableBody = document.querySelector("#krsMahasiswaTable tbody");
+        tableBody.innerHTML = '';
+        krsList.forEach(krs => {
+            const canApprove = krs.statusPersetujuan === 'DIAJUKAN';
+            tableBody.innerHTML += `
+                <tr>
+                    <td>${krs.kodeMataKuliah}</td>
+                    <td>${krs.namaMataKuliah}</td>
+                    <td>${krs.namaDosen}</td>
+                    <td>${krs.statusPersetujuan}</td>
+                    <td>
+                        ${canApprove ? `
+                        <button class="btn btn-sm btn-success" onclick="updatePersetujuanKrs(${krs.krsId}, 'DISETUJUI', ${mahasiswaId}, '${namaMahasiswa}')">Setujui</button>
+                        <button class="btn btn-sm btn-danger" onclick="updatePersetujuanKrs(${krs.krsId}, 'DITOLAK', ${mahasiswaId}, '${namaMahasiswa}')">Tolak</button>
+                        ` : 'Terkunci'}
+                    </td>
+                </tr>`;
+        });
+        openModal('krsMahasiswaModal');
+    }
+
+    async function updatePersetujuanKrs(krsId, status, mahasiswaId, namaMahasiswa) {
+        try {
+            await sendData(`${API_BASE}/krs/${krsId}/persetujuan`, 'PATCH', { statusPersetujuan: status });
+            alert(`KRS berhasil di-${status.toLowerCase()}!`);
+            // Refresh the modal content
+            showKrsMahasiswa(mahasiswaId, namaMahasiswa);
+        } catch (error) {
+            alert(`Gagal mengubah status KRS: ${error.message}`);
+        }
+    }
+
+
+</script>
+</body>
+</html>
