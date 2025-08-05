@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Keuangan</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #1877f2;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        header h2 {
+            margin: 0;
+            color: #1c1e21;
+        }
+        nav button {
+            padding: 0.6rem 1rem;
+            background-color: #e4e6eb;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 0.5rem;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        nav button.active, nav button:hover {
+            background-color: #1877f2;
+            color: white;
+        }
+        .content-section {
+            display: none;
+            margin-top: 1.5rem;
+        }
+        .content-section.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border: 1px solid #dddfe2;
+        }
+        th {
+            background-color: #f0f2f5;
+        }
+        .btn, .btn-sm {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 5px;
+            color: white !important;
+        }
+        .btn-sm { font-size: 0.8em; }
+        .btn-info { background-color: #17a2b8; }
+        .btn-success { background-color: #28a745; }
+        .btn-primary { background-color: #007bff; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-secondary { background-color: #6c757d; }
+
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 25px; border: 1px solid #888; width: 80%; max-width: 700px; border-radius: 8px; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: .5rem; font-weight: bold; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: .5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        #rincianContainer .rincian-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        #rincianContainer .rincian-item input { flex: 1; }
+        
+        .status-pending { color: orange; font-weight: bold; }
+        .status-berhasil { color: green; font-weight: bold; }
+        .status-gagal { color: red; font-weight: bold; }
+        .status-belum_lunas { color: red; font-weight: bold; }
+        .status-lunas { color: green; font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h2 id="pageTitle">Keuangan</h2>
+            <nav id="navContainer">
+                <a href="index.html" class="btn btn-secondary">Kembali ke Profil</a>
+            </nav>
+        </header>
+
+        <div id="loading" style="display: none;">Memuat data...</div>
+
+        <section id="tagihan-mahasiswa" class="content-section">
+            <h3>Tagihan Anda</h3>
+            <table id="tagihanMahasiswaTable">
+                <thead>
+                    <tr>
+                        <th>Deskripsi</th>
+                        <th>Total Tagihan</th>
+                        <th>Jatuh Tempo</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="kelola-tagihan" class="content-section">
+            <h3>Semua Tagihan Mahasiswa</h3>
+            <button class="btn btn-primary" onclick="openModal('createTagihanModal')">Buat Tagihan Baru</button>
+            <table id="semuaTagihanTable">
+                <thead>
+                    <tr>
+                        <th>Nama Mahasiswa</th>
+                        <th>Deskripsi</th>
+                        <th>Total</th>
+                        <th>Jatuh Tempo</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="riwayat-pembayaran" class="content-section">
+            <h3>Riwayat Pembayaran</h3>
+            <table id="riwayatPembayaranTable">
+                <thead>
+                    <tr>
+                        <th>Nama Mahasiswa</th>
+                        <th>Tgl Bayar</th>
+                        <th>Jumlah</th>
+                        <th>Metode</th>
+                        <th>Status Verifikasi</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </div>
+
+    <div id="detailTagihanModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('detailTagihanModal')">&times;</span>
+            <h3 id="detailTagihanTitle">Rincian Tagihan</h3>
+            <div id="detailTagihanContent"></div>
+        </div>
+    </div>
+    
+    <div id="pembayaranModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('pembayaranModal')">&times;</span>
+            <h3>Konfirmasi Pembayaran</h3>
+            <form id="pembayaranForm">
+                <input type="hidden" id="pembayaranTagihanId">
+                <div class="form-group">
+                    <label for="jumlahBayar">Jumlah Bayar</label>
+                    <input type="number" id="jumlahBayar" required>
+                </div>
+                <div class="form-group">
+                    <label for="metodePembayaran">Metode Pembayaran</label>
+                    <input type="text" id="metodePembayaran" placeholder="e.g., Transfer Bank BCA" required>
+                </div>
+                <div class="form-group">
+                    <label for="buktiBayar">URL Bukti Bayar</label>
+                    <input type="text" id="buktiBayar" placeholder="e.g., https://link.to/bukti.jpg" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Kirim Konfirmasi</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="createTagihanModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-btn" onclick="closeModal('createTagihanModal')">&times;</span>
+            <h3>Buat Tagihan Baru</h3>
+            <form id="createTagihanForm">
+                <div class="form-group">
+                    <label for="mahasiswaId">Mahasiswa ID</label>
+                    <input type="number" id="mahasiswaId" required>
+                </div>
+                <div class="form-group">
+                    <label for="deskripsiTagihan">Deskripsi</label>
+                    <input type="text" id="deskripsiTagihan" placeholder="e.g., Tagihan Semester Ganjil 2024/2025" required>
+                </div>
+                <div class="form-group">
+                    <label for="tanggalJatuhTempo">Tanggal Jatuh Tempo</label>
+                    <input type="date" id="tanggalJatuhTempo" required>
+                </div>
+                <hr>
+                <h4>Rincian Tagihan</h4>
+                <div id="rincianContainer">
+                    </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="addRincianItem()">Tambah Rincian</button>
+                <hr>
+                <button type="submit" class="btn btn-primary">Buat Tagihan</button>
+            </form>
+        </div>
+    </div>
+
+
+<script>
+    const API_BASE = '/api';
+    let jwtToken = null;
+    let userRole = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        jwtToken = sessionStorage.getItem('jwtToken');
+        if (!jwtToken) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        try {
+            const profile = await fetchData(`${API_BASE}/auth/me`);
+            userRole = profile.role;
+            setupUIForRole();
+        } catch (error) {
+            console.error("Gagal memuat profil:", error);
+            window.location.href = 'index.html';
+        }
+        
+        // Event Listeners
+        document.getElementById('pembayaranForm').addEventListener('submit', handleKonfirmasiPembayaran);
+        document.getElementById('createTagihanForm').addEventListener('submit', handleCreateTagihan);
+    });
+    
+    function setupUIForRole() {
+        const nav = document.getElementById('navContainer');
+        nav.innerHTML = ''; // Clear nav
+        
+        if (userRole === 'Mahasiswa') {
+            nav.innerHTML += `<button class="nav-btn active" onclick="switchView('tagihan-mahasiswa')">Tagihan Saya</button>`;
+            switchView('tagihan-mahasiswa');
+        } else if (userRole === 'Admin') {
+            nav.innerHTML += `<button class="nav-btn active" onclick="switchView('kelola-tagihan')">Kelola Tagihan</button>`;
+            nav.innerHTML += `<button class="nav-btn" onclick="switchView('riwayat-pembayaran')">Riwayat Pembayaran</button>`;
+            switchView('kelola-tagihan');
+        }
+         nav.innerHTML += `<a href="index.html" class="btn btn-secondary">Kembali ke Profil</a>`;
+    }
+
+    function switchView(targetId) {
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+
+        const activeBtn = document.querySelector(`.nav-btn[onclick*="${targetId}"]`);
+        if(activeBtn) activeBtn.classList.add('active');
+        
+        document.getElementById(targetId).classList.add('active');
+        document.getElementById('pageTitle').textContent = activeBtn ? activeBtn.textContent : "Keuangan";
+
+        // Load data for the active view
+        if (targetId === 'tagihan-mahasiswa') loadTagihanMahasiswa();
+        if (targetId === 'kelola-tagihan') loadSemuaTagihan();
+        if (targetId === 'riwayat-pembayaran') loadRiwayatPembayaran();
+    }
+    
+    // --- DATA LOADERS ---
+    async function loadTagihanMahasiswa() {
+        const data = await fetchData(`${API_BASE}/mahasiswa/me/tagihan`);
+        const tableBody = document.querySelector("#tagihanMahasiswaTable tbody");
+        tableBody.innerHTML = '';
+        data.forEach(t => {
+            tableBody.innerHTML += `
+                <tr>
+                    <td>${t.deskripsiTagihan}</td>
+                    <td>Rp ${t.totalTagihan.toLocaleString('id-ID')}</td>
+                    <td>${t.tanggalJatuhTempo}</td>
+                    <td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="showDetailTagihan(${t.tagihanId})">Rincian</button>
+                        ${t.status === 'BELUM_LUNAS' ? `<button class="btn btn-sm btn-success" onclick="openPembayaranModal(${t.tagihanId})">Bayar</button>` : ''}
+                    </td>
+                </tr>`;
+        });
+    }
+
+    async function loadSemuaTagihan() {
+        const data = await fetchData(`${API_BASE}/tagihan`);
+        const tableBody = document.querySelector("#semuaTagihanTable tbody");
+        tableBody.innerHTML = '';
+        data.forEach(t => {
+             tableBody.innerHTML += `
+                <tr>
+                    <td>${t.namaMahasiswa} (ID: ${t.mahasiswaId})</td>
+                    <td>${t.deskripsiTagihan}</td>
+                    <td>Rp ${t.totalTagihan.toLocaleString('id-ID')}</td>
+                    <td>${t.tanggalJatuhTempo}</td>
+                    <td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td>
+                    <td><button class="btn btn-sm btn-info" onclick="showDetailTagihan(${t.tagihanId})">Rincian</button></td>
+                </tr>`;
+        });
+    }
+
+    async function loadRiwayatPembayaran() {
+        const data = await fetchData(`${API_BASE}/pembayaran`);
+        const tableBody = document.querySelector("#riwayatPembayaranTable tbody");
+        tableBody.innerHTML = '';
+        data.forEach(p => {
+             tableBody.innerHTML += `
+                <tr>
+                    <td>${p.namaMahasiswa}</td>
+                    <td>${new Date(p.tanggalBayar).toLocaleString('id-ID')}</td>
+                    <td>Rp ${p.jumlahBayar.toLocaleString('id-ID')}</td>
+                    <td>${p.metodePembayaran}</td>
+                    <td><span class="status-${p.statusVerifikasi.toLowerCase()}">${p.statusVerifikasi}</span></td>
+                    <td>
+                        ${p.statusVerifikasi === 'PENDING' ? `
+                            <button class="btn btn-sm btn-success" onclick="verifikasiPembayaran(${p.pembayaranId}, 'BERHASIL')">Verifikasi</button>
+                            <button class="btn btn-sm btn-danger" onclick="verifikasiPembayaran(${p.pembayaranId}, 'GAGAL')">Tolak</button>
+                        ` : ''}
+                    </td>
+                </tr>`;
+        });
+    }
+
+    // --- MODAL & FORM HANDLERS ---
+    async function showDetailTagihan(tagihanId) {
+        const data = await fetchData(`${API_BASE}/tagihan/${tagihanId}`);
+        const contentDiv = document.getElementById('detailTagihanContent');
+        let html = `<h4>${data.deskripsiTagihan}</h4>
+                    <p><b>Total:</b> Rp ${data.totalTagihan.toLocaleString('id-ID')}</p>
+                    <p><b>Status:</b> ${data.status}</p>
+                    <ul>`;
+        data.rincian.forEach(r => {
+            html += `<li>${r.namaKomponen}: Rp ${r.jumlah.toLocaleString('id-ID')} <i>(${r.keterangan || ''})</i></li>`;
+        });
+        html += `</ul>`;
+        contentDiv.innerHTML = html;
+        openModal('detailTagihanModal');
+    }
+
+    function openPembayaranModal(tagihanId) {
+        document.getElementById('pembayaranTagihanId').value = tagihanId;
+        document.getElementById('pembayaranForm').reset();
+        openModal('pembayaranModal');
+    }
+
+    async function handleKonfirmasiPembayaran(e) {
+        e.preventDefault();
+        const payload = {
+            tagihanId: parseInt(document.getElementById('pembayaranTagihanId').value),
+            jumlahBayar: parseFloat(document.getElementById('jumlahBayar').value),
+            metodePembayaran: document.getElementById('metodePembayaran').value,
+            buktiBayar: document.getElementById('buktiBayar').value
+        };
+        try {
+            await sendData(`${API_BASE}/pembayaran`, 'POST', payload);
+            alert('Konfirmasi pembayaran berhasil dikirim!');
+            closeModal('pembayaranModal');
+            loadTagihanMahasiswa();
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+        }
+    }
+    
+    async function verifikasiPembayaran(pembayaranId, status) {
+         if (!confirm(`Anda yakin ingin mengubah status pembayaran ini menjadi ${status}?`)) return;
+         try {
+            await sendData(`${API_BASE}/pembayaran/${pembayaranId}/verifikasi`, 'PATCH', { statusVerifikasi: status });
+            alert('Status pembayaran berhasil diupdate.');
+            loadRiwayatPembayaran();
+         } catch(error) {
+            alert(`Error: ${error.message}`);
+         }
+    }
+    
+    // --- ADMIN: Create Tagihan ---
+    function addRincianItem() {
+        const container = document.getElementById('rincianContainer');
+        const newItem = document.createElement('div');
+        newItem.classList.add('rincian-item');
+        newItem.innerHTML = `
+            <input type="number" class="form-control komponen-id" placeholder="ID Komponen" required>
+            <input type="number" class="form-control jumlah" placeholder="Jumlah (e.g. 2500000)" required>
+            <input type="text" class="form-control keterangan" placeholder="Keterangan (Opsional)">
+            <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">Hapus</button>
+        `;
+        container.appendChild(newItem);
+    }
+    
+    async function handleCreateTagihan(e) {
+        e.preventDefault();
+        const rincian = [];
+        document.querySelectorAll('#rincianContainer .rincian-item').forEach(item => {
+            rincian.push({
+                komponenId: parseInt(item.querySelector('.komponen-id').value),
+                jumlah: parseFloat(item.querySelector('.jumlah').value),
+                keterangan: item.querySelector('.keterangan').value
+            });
+        });
+        
+        const payload = {
+            mahasiswaId: parseInt(document.getElementById('mahasiswaId').value),
+            deskripsiTagihan: document.getElementById('deskripsiTagihan').value,
+            tanggalJatuhTempo: document.getElementById('tanggalJatuhTempo').value,
+            rincian: rincian
+        };
+        
+        try {
+            await sendData(`${API_BASE}/tagihan`, 'POST', payload);
+            alert('Tagihan baru berhasil dibuat!');
+            closeModal('createTagihanModal');
+            loadSemuaTagihan();
+        } catch(error) {
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+
+    // --- UTILITIES ---
+    async function fetchData(url) {
+        loadingDiv.style.display = 'block';
+        try {
+            const response = await fetch(url, { headers: { 'Authorization': `Bearer ${jwtToken}` } });
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) window.location.href = 'index.html';
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        } finally {
+            loadingDiv.style.display = 'none';
+        }
+    }
+    async function sendData(url, method, body) {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Authorization': `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Request failed with no error body.' }));
+            throw new Error(errorData.message || 'Request failed');
+        }
+        if (response.status !== 204) {
+             return response.json().catch(() => null); // Handle empty responses
+        }
+        return null;
+    }
+    function openModal(modalId) { 
+        if(modalId === 'createTagihanModal') {
+            document.getElementById('createTagihanForm').reset();
+            document.getElementById('rincianContainer').innerHTML = '';
+            addRincianItem(); // Add one by default
+        }
+        document.getElementById(modalId).style.display = 'block'; 
+    }
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+    
+</script>
+</body>
+</html>
