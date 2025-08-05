@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-T">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelas yang Diampu</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            padding: 2rem;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+            margin: auto;
+        }
+        h2 {
+            color: #1c1e21;
+            border-bottom: 2px solid #1877f2;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #dddfe2;
+        }
+        th {
+            background-color: #f0f2f5;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f7f7f7;
+        }
+        .action-buttons {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+        button, .button-link {
+            padding: 0.6rem 1.2rem;
+            background-color: #e4e6eb;
+            border: none;
+            border-radius: 6px;
+            color: #1c1e21;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+        button:hover, .button-link:hover {
+            background-color: #d8dbdf;
+        }
+        #logoutButton {
+            background-color: #fa383e;
+            color: white;
+        }
+        #logoutButton:hover {
+            background-color: #e33138;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Daftar Kelas yang Diampu</h2>
+        
+        <div id="loading">Memuat data kelas...</div>
+
+        <div id="kelasContent" style="display: none;">
+            <table id="kelasTable">
+                <thead>
+                    <tr>
+                        <th>Kode MK</th>
+                        <th>Nama Mata Kuliah</th>
+                        <th>SKS</th>
+                        <th>Jadwal</th>
+                        <th>Ruangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="index.html" class="button-link">Kembali ke Profil</a>
+            <button id="logoutButton">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api/dosen/me';
+        const kelasTableBody = document.querySelector("#kelasTable tbody");
+        const loadingDiv = document.getElementById('loading');
+        const contentDiv = document.getElementById('kelasContent');
+        const logoutButton = document.getElementById('logoutButton');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const jwtToken = sessionStorage.getItem('jwtToken');
+            
+            if (!jwtToken) {
+                // Jika tidak ada token, paksa kembali ke halaman login
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            fetchKelas(jwtToken);
+        });
+
+        async function fetchKelas(token) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/kelas`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        // Token tidak valid atau kadaluarsa
+                         window.location.href = 'index.html';
+                    }
+                    throw new Error(`Gagal mengambil data: ${response.statusText}`);
+                }
+
+                const kelasList = await response.json();
+                displayKelas(kelasList);
+                
+            } catch (error) {
+                loadingDiv.textContent = `Error: ${error.message}`;
+                console.error("Fetch error:", error);
+            }
+        }
+
+        function displayKelas(kelasList) {
+            loadingDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+
+            if (kelasList.length === 0) {
+                kelasTableBody.innerHTML = '<tr><td colspan="5">Tidak ada kelas yang diampu saat ini.</td></tr>';
+                return;
+            }
+
+            // Kosongkan tabel sebelum mengisi data baru
+            kelasTableBody.innerHTML = ''; 
+
+            kelasList.forEach(kelas => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${kelas.kodeMataKuliah}</td>
+                    <td>${kelas.namaMataKuliah}</td>
+                    <td>${kelas.sks}</td>
+                    <td>${kelas.jadwal}</td>
+                    <td>${kelas.ruangan}</td>
+                `;
+                kelasTableBody.appendChild(row);
+            });
+        }
+        
+        logoutButton.addEventListener('click', () => {
+            sessionStorage.removeItem('jwtToken');
+            window.location.href = 'index.html';
+        });
+
+    </script>
+
+</body>
+</html>
