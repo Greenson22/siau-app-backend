@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Mahasiswa</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        header h2 { margin: 0; color: #1c1e21; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border: 1px solid #dddfe2; }
+        th { background-color: #f0f2f5; }
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 5px;
+            color: white !important;
+            font-weight: bold;
+        }
+        .btn-sm { font-size: 0.8em; padding: 5px 10px; }
+        .btn-info { background-color: #17a2b8; }
+        .btn-warning { background-color: #ffc107; color: #212529 !important;}
+        .btn-primary { background-color: #007bff; }
+        .btn-secondary { background-color: #6c757d; }
+        
+        .filter-container {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .filter-container input, .filter-container select {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        
+        .pagination-container {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        .pagination-container button {
+            margin: 0 5px;
+        }
+        .pagination-container span {
+            font-weight: bold;
+        }
+
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 25px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 8px; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: .5rem; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: .5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        #mahasiswaDetailContent p { margin: 8px 0; }
+        #mahasiswaDetailContent p strong { color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2 id="pageTitle">Daftar Mahasiswa</h2>
+            <a href="index.html" class="btn btn-secondary">Kembali ke Profil</a>
+        </header>
+
+        <div id="loading" style="display: none;">Memuat data...</div>
+        
+        <div id="admin-content">
+            <div class="filter-container">
+                <input type="text" id="searchInput" placeholder="Cari NIM atau Nama...">
+                <select id="jurusanFilter">
+                    <option value="">Semua Jurusan</option>
+                    </select>
+                <button class="btn btn-primary" onclick="applyFilter()">Cari</button>
+            </div>
+
+            <table id="mahasiswaTable">
+                <thead>
+                    <tr>
+                        <th>NIM</th>
+                        <th>Nama Lengkap</th>
+                        <th>Jurusan</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            
+            <div class="pagination-container">
+                <button id="prevPage" class="btn btn-secondary" disabled>Sebelumnya</button>
+                <span>Halaman <span id="currentPage">1</span> dari <span id="totalPages">1</span></span>
+                <button id="nextPage" class="btn btn-secondary" disabled>Berikutnya</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('detailModal')">&times;</span>
+            <h3>Detail Mahasiswa</h3>
+            <div id="mahasiswaDetailContent"></div>
+        </div>
+    </div>
+
+    <div id="biodataModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('biodataModal')">&times;</span>
+            <h3 id="biodataModalTitle">Update Biodata Mahasiswa</h3>
+            <form id="biodataForm">
+                <input type="hidden" id="biodataMahasiswaId">
+                <div class="form-group">
+                    <label for="alamat">Alamat</label>
+                    <textarea id="alamat" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="nomorTelepon">Nomor Telepon</label>
+                    <input type="tel" id="nomorTelepon">
+                </div>
+                <div class="form-group">
+                    <label for="emailPribadi">Email Pribadi</label>
+                    <input type="email" id="emailPribadi">
+                </div>
+                <div class="form-group">
+                    <label for="kontakDarurat">Kontak Darurat</label>
+                    <input type="text" id="kontakDarurat">
+                </div>
+                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+            </form>
+        </div>
+    </div>
+
+<script>
+    const API_BASE = '/api';
+    let jwtToken = null;
+    let currentPage = 0;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        jwtToken = sessionStorage.getItem('jwtToken');
+        if (!jwtToken) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        try {
+            const profile = await fetchData(`${API_BASE}/auth/me`);
+            if (profile.role !== 'Admin') {
+                document.body.innerHTML = '<h1>Akses Ditolak. Halaman ini hanya untuk Admin.</h1>';
+                return;
+            }
+            loadJurusanOptions();
+            loadMahasiswa();
+
+            // Event Listeners
+            document.getElementById('prevPage').addEventListener('click', () => loadMahasiswa(currentPage - 1));
+            document.getElementById('nextPage').addEventListener('click', () => loadMahasiswa(currentPage + 1));
+            document.getElementById('biodataForm').addEventListener('submit', handleUpdateBiodata);
+
+        } catch (error) {
+            console.error("Gagal memuat profil:", error);
+            window.location.href = 'index.html';
+        }
+    });
+
+    async function loadJurusanOptions() {
+        const data = await fetchData(`${API_BASE}/jurusan`);
+        const select = document.getElementById('jurusanFilter');
+        data.forEach(j => {
+            select.innerHTML += `<option value="${j.jurusanId}">${j.namaJurusan}</option>`;
+        });
+    }
+    
+    function applyFilter() {
+        loadMahasiswa(0); // Selalu mulai dari halaman pertama saat filter diterapkan
+    }
+
+    async function loadMahasiswa(page = 0) {
+        currentPage = page;
+        const search = document.getElementById('searchInput').value;
+        const jurusanId = document.getElementById('jurusanFilter').value;
+        
+        let url = `${API_BASE}/mahasiswa?page=${page}&limit=10`;
+        if (search) url += `&search=${search}`;
+        if (jurusanId) url += `&jurusan_id=${jurusanId}`;
+
+        const data = await fetchData(url);
+        
+        // Render Tabel
+        const tableBody = document.querySelector("#mahasiswaTable tbody");
+        tableBody.innerHTML = '';
+        if (data.content.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5">Data mahasiswa tidak ditemukan.</td></tr>';
+        } else {
+            data.content.forEach(mhs => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${mhs.nim}</td>
+                        <td>${mhs.namaLengkap}</td>
+                        <td>${mhs.namaJurusan || '-'}</td>
+                        <td>${mhs.status || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="showDetail(${mhs.mahasiswaId})">Detail</button>
+                            <button class="btn btn-sm btn-warning" onclick="openBiodataModal(${mhs.mahasiswaId},'${mhs.namaLengkap}')">Update Biodata</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        
+        // Render Paginasi
+        document.getElementById('currentPage').textContent = data.number + 1;
+        document.getElementById('totalPages').textContent = data.totalPages > 0 ? data.totalPages : 1;
+        document.getElementById('prevPage').disabled = data.first;
+        document.getElementById('nextPage').disabled = data.last;
+    }
+
+    async function showDetail(mahasiswaId) {
+        const data = await fetchData(`${API_BASE}/mahasiswa/${mahasiswaId}`);
+        const contentDiv = document.getElementById('mahasiswaDetailContent');
+        contentDiv.innerHTML = `
+            <p><strong>ID Mahasiswa:</strong> ${data.mahasiswaId}</p>
+            <p><strong>NIM:</strong> ${data.nim}</p>
+            <p><strong>Nama Lengkap:</strong> ${data.namaLengkap}</p>
+            <p><strong>Status:</strong> ${data.status}</p>
+            <p><strong>Jurusan:</strong> ${data.namaJurusan}</p>
+            <p><strong>Dosen Pembimbing Akademik:</strong> ${data.namaDosenPA || 'Belum ditentukan'}</p>
+        `;
+        openModal('detailModal');
+    }
+    
+    // --- FUNGSI BARU UNTUK BIODATA ---
+    function openBiodataModal(mahasiswaId, namaLengkap) {
+        document.getElementById('biodataForm').reset();
+        document.getElementById('biodataMahasiswaId').value = mahasiswaId;
+        document.getElementById('biodataModalTitle').textContent = `Update Biodata - ${namaLengkap}`;
+        openModal('biodataModal');
+    }
+
+    async function handleUpdateBiodata(e) {
+        e.preventDefault();
+        const mahasiswaId = document.getElementById('biodataMahasiswaId').value;
+        const payload = {
+            alamat: document.getElementById('alamat').value,
+            nomorTelepon: document.getElementById('nomorTelepon').value,
+            emailPribadi: document.getElementById('emailPribadi').value,
+            kontakDarurat: document.getElementById('kontakDarurat').value
+        };
+
+        try {
+            await sendData(`${API_BASE}/mahasiswa/${mahasiswaId}/biodata`, 'PUT', payload);
+            alert('Biodata mahasiswa berhasil diperbarui!');
+            closeModal('biodataModal');
+        } catch (error) {
+            alert(`Gagal memperbarui biodata: ${error.message}`);
+        }
+    }
+    
+    // --- FUNGSI BANTU (UTILITIES) ---
+    async function fetchData(url) {
+        document.getElementById('loading').style.display = 'block';
+        try {
+            const response = await fetch(url, { headers: { 'Authorization': `Bearer ${jwtToken}` } });
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) window.location.href = 'index.html';
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return await response.json();
+        } finally {
+            document.getElementById('loading').style.display = 'none';
+        }
+    }
+
+    async function sendData(url, method, body) {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Authorization': `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Request gagal.' }));
+            throw new Error(errorData.message);
+        }
+
+        // Cek tipe konten dari respons
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            // Jika respons adalah JSON, parse sebagai JSON
+            return response.json();
+        } else {
+            // Jika bukan, kembalikan sebagai teks biasa
+            return response.text();
+        }
+    }
+
+    function openModal(modalId) { document.getElementById(modalId).style.display = 'block'; }
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+</script>
+</body>
+</html>
