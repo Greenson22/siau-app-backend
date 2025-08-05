@@ -144,7 +144,7 @@
                     <label>Nama Lengkap</label><input type="text" id="namaLengkap" required>
                 </div>
                 <div class="form-group">
-                    <label>Jurusan</label><select id="jurusanId" required></select>
+                    <label>Jurusan</label><select id="userJurusanId" required></select>
                 </div>
                 <div id="nimGroup" class="form-group hidden">
                     <label>NIM</label><input type="text" id="nim">
@@ -175,7 +175,32 @@
         </div>
     </div>
     
-    <script>
+    <div id="matkulModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('matkulModal')">&times;</span>
+            <h3>Buat Mata Kuliah Baru</h3>
+            <form id="matkulForm">
+                <div class="form-group">
+                    <label for="kodeMatkul">Kode Mata Kuliah</label>
+                    <input type="text" id="kodeMatkul" required>
+                </div>
+                <div class="form-group">
+                    <label for="namaMatkul">Nama Mata Kuliah</label>
+                    <input type="text" id="namaMatkul" required>
+                </div>
+                <div class="form-group">
+                    <label for="sks">SKS</label>
+                    <input type="number" id="sks" required>
+                </div>
+                 <div class="form-group">
+                    <label>Jurusan</label><select id="matkulJurusanId" required></select>
+                </div>
+                <button type="submit" class="btn btn-primary">Simpan</button>
+            </form>
+        </div>
+    </div>
+
+<script>
     const API_BASE = '/api';
     let jwtToken = null;
     let allJurusan = [];
@@ -195,7 +220,7 @@
             }
             setupTabs();
             loadUsers(); // Muat data pengguna secara default
-            loadAllJurusan(); // Muat data jurusan untuk dropdown
+            loadAllJurusan(); // Muat data jurusan untuk semua dropdown
         } catch (error) {
             console.error("Gagal memuat profil:", error);
             window.location.href = 'index.html';
@@ -204,7 +229,8 @@
         // Event Listeners
         document.getElementById('roleId').addEventListener('change', handleRoleChange);
         document.getElementById('userForm').addEventListener('submit', handleCreateUser);
-        document.getElementById('jurusanForm').addEventListener('submit', handleCreateJurusan); // Listener baru
+        document.getElementById('jurusanForm').addEventListener('submit', handleCreateJurusan);
+        document.getElementById('matkulForm').addEventListener('submit', handleCreateMataKuliah); // Listener baru
     });
     
     function setupTabs() {
@@ -247,17 +273,28 @@
     }
 
     async function loadMataKuliah() {
-        // Logika untuk memuat mata kuliah akan ditambahkan nanti
+        const data = await fetchData(`${API_BASE}/mata-kuliah`);
         const tableBody = document.querySelector("#matkulTable tbody");
-        tableBody.innerHTML = '<tr><td colspan="5">Fitur ini akan dikembangkan.</td></tr>';
+        tableBody.innerHTML = '';
+        data.forEach(m => {
+            tableBody.innerHTML += `<tr><td>${m.matkulId}</td><td>${m.kodeMatkul}</td><td>${m.namaMatkul}</td><td>${m.sks}</td><td>${m.namaJurusan}</td></tr>`;
+        });
     }
     
     async function loadAllJurusan() {
         allJurusan = await fetchData(`${API_BASE}/jurusan`);
-        const jurusanSelect = document.getElementById('jurusanId');
-        jurusanSelect.innerHTML = '<option value="">-- Pilih Jurusan --</option>';
+        // Populate dropdown di form pengguna
+        const userJurusanSelect = document.getElementById('userJurusanId');
+        userJurusanSelect.innerHTML = '<option value="">-- Pilih Jurusan --</option>';
         allJurusan.forEach(j => {
-            jurusanSelect.innerHTML += `<option value="${j.jurusanId}">${j.namaJurusan}</option>`;
+            userJurusanSelect.innerHTML += `<option value="${j.jurusanId}">${j.namaJurusan}</option>`;
+        });
+        
+        // Populate dropdown di form mata kuliah
+        const matkulJurusanSelect = document.getElementById('matkulJurusanId');
+        matkulJurusanSelect.innerHTML = '<option value="">-- Pilih Jurusan --</option>';
+        allJurusan.forEach(j => {
+            matkulJurusanSelect.innerHTML += `<option value="${j.jurusanId}">${j.namaJurusan}</option>`;
         });
     }
     
@@ -282,7 +319,7 @@
             password: document.getElementById('password').value,
             roleId: parseInt(roleId),
             namaLengkap: document.getElementById('namaLengkap').value,
-            jurusanId: parseInt(document.getElementById('jurusanId').value)
+            jurusanId: parseInt(document.getElementById('userJurusanId').value)
         };
         
         if (roleId === '3') payload.nim = document.getElementById('nim').value;
@@ -298,7 +335,6 @@
         }
     }
 
-    // Fungsi baru untuk membuat jurusan
     async function handleCreateJurusan(e) {
         e.preventDefault();
         const payload = {
@@ -310,10 +346,29 @@
             await sendData(`${API_BASE}/jurusan`, 'POST', payload);
             alert('Jurusan baru berhasil dibuat!');
             closeModal('jurusanModal');
-            loadJurusan(); // Muat ulang tabel jurusan
-            loadAllJurusan(); // Muat ulang dropdown jurusan di form pengguna
+            loadJurusan();
+            loadAllJurusan(); // Refresh dropdowns
         } catch (error) {
             alert(`Gagal membuat jurusan: ${error.message}`);
+        }
+    }
+
+    async function handleCreateMataKuliah(e) {
+        e.preventDefault();
+        const payload = {
+            kodeMatkul: document.getElementById('kodeMatkul').value,
+            namaMatkul: document.getElementById('namaMatkul').value,
+            sks: parseInt(document.getElementById('sks').value),
+            jurusanId: parseInt(document.getElementById('matkulJurusanId').value)
+        };
+        
+        try {
+            await sendData(`${API_BASE}/mata-kuliah`, 'POST', payload);
+            alert('Mata kuliah baru berhasil dibuat!');
+            closeModal('matkulModal');
+            loadMataKuliah();
+        } catch (error) {
+            alert(`Gagal membuat mata kuliah: ${error.message}`);
         }
     }
     
@@ -348,6 +403,7 @@
     function openModal(modalId) {
         if (modalId === 'userModal') document.getElementById('userForm').reset();
         if (modalId === 'jurusanModal') document.getElementById('jurusanForm').reset();
+        if (modalId === 'matkulModal') document.getElementById('matkulForm').reset();
         
         document.getElementById(modalId).style.display = 'block'; 
     }
