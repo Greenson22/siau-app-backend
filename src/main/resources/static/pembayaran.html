@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembayaran & Verifikasi</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        header h2 { margin: 0; color: #1c1e21; }
+        .content-section { display: none; margin-top: 1.5rem; }
+        .content-section.active { display: block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border: 1px solid #dddfe2; }
+        th { background-color: #f0f2f5; }
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 5px;
+            color: white !important;
+            font-weight: bold;
+        }
+        .btn-sm { font-size: 0.8em; padding: 5px 10px; }
+        .btn-success { background-color: #28a745; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-secondary { background-color: #6c757d; }
+        
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 25px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 8px; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: .5rem; font-weight: bold; }
+        .form-group input { width: 100%; padding: .5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        .status-pending { color: orange; font-weight: bold; }
+        .status-berhasil { color: green; font-weight: bold; }
+        .status-gagal { color: red; font-weight: bold; }
+        .status-belum_lunas { color: red; font-weight: bold; }
+        .status-lunas { color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2 id="pageTitle">Pembayaran</h2>
+            <a href="index.html" class="btn btn-secondary">Kembali ke Profil</a>
+        </header>
+
+        <div id="loading" style="display: none;">Memuat data...</div>
+
+        <section id="pembayaran-mahasiswa" class="content-section">
+            <h3>Konfirmasi Pembayaran Tagihan</h3>
+            <p>Silakan lakukan konfirmasi pembayaran untuk tagihan yang berstatus "BELUM LUNAS".</p>
+            <table id="tagihanUntukBayarTable">
+                <thead>
+                    <tr>
+                        <th>Deskripsi</th>
+                        <th>Total Tagihan</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="verifikasi-admin" class="content-section">
+            <h3>Verifikasi Pembayaran</h3>
+             <table id="riwayatPembayaranTable">
+                <thead>
+                    <tr>
+                        <th>Nama Mahasiswa</th>
+                        <th>Tgl Bayar</th>
+                        <th>Jumlah</th>
+                        <th>Metode</th>
+                        <th>Status Verifikasi</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </div>
+
+    <div id="pembayaranModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('pembayaranModal')">&times;</span>
+            <h3 id="pembayaranModalTitle">Konfirmasi Pembayaran</h3>
+            <form id="pembayaranForm">
+                <input type="hidden" id="pembayaranTagihanId">
+                <div class="form-group">
+                    <label for="jumlahBayar">Jumlah Bayar</label>
+                    <input type="number" id="jumlahBayar" required>
+                </div>
+                <div class="form-group">
+                    <label for="metodePembayaran">Metode Pembayaran</label>
+                    <input type="text" id="metodePembayaran" placeholder="Contoh: Transfer Bank Mandiri" required>
+                </div>
+                <div class="form-group">
+                    <label for="buktiBayar">URL Bukti Bayar</label>
+                    <input type="text" id="buktiBayar" placeholder="Contoh: https://link-gambar.com/bukti.jpg" required>
+                </div>
+                <button type="submit" class="btn btn-success">Kirim Konfirmasi</button>
+            </form>
+        </div>
+    </div>
+
+<script>
+    const API_BASE = '/api';
+    let jwtToken = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        jwtToken = sessionStorage.getItem('jwtToken');
+        if (!jwtToken) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        try {
+            const profile = await fetchData(`${API_BASE}/auth/me`);
+            setupUIForRole(profile.role);
+        } catch (error) {
+            console.error("Gagal memuat profil:", error);
+            window.location.href = 'index.html';
+        }
+        
+        document.getElementById('pembayaranForm').addEventListener('submit', handleKonfirmasiPembayaran);
+    });
+    
+    function setupUIForRole(role) {
+        if (role === 'Mahasiswa') {
+            document.getElementById('pageTitle').textContent = 'Konfirmasi Pembayaran';
+            document.getElementById('pembayaran-mahasiswa').classList.add('active');
+            loadTagihanUntukPembayaran();
+        } else if (role === 'Admin') {
+            document.getElementById('pageTitle').textContent = 'Verifikasi Pembayaran';
+            document.getElementById('verifikasi-admin').classList.add('active');
+            loadRiwayatPembayaran();
+        } else {
+            document.body.innerHTML = '<h1>Akses Ditolak</h1>';
+        }
+    }
+    
+    // --- FUNGSI UNTUK MAHASISWA ---
+    async function loadTagihanUntukPembayaran() {
+        const data = await fetchData(`${API_BASE}/mahasiswa/me/tagihan`);
+        const tableBody = document.querySelector("#tagihanUntukBayarTable tbody");
+        tableBody.innerHTML = '';
+        data.forEach(t => {
+            tableBody.innerHTML += `
+                <tr>
+                    <td>${t.deskripsiTagihan}</td>
+                    <td>Rp ${t.totalTagihan.toLocaleString('id-ID')}</td>
+                    <td><span class="status-${t.status.toLowerCase()}">${t.status}</span></td>
+                    <td>
+                        ${t.status === 'BELUM_LUNAS' ? 
+                            `<button class="btn btn-sm btn-success" onclick="openPembayaranModal(${t.tagihanId}, '${t.deskripsiTagihan}')">Konfirmasi Bayar</button>` : 
+                            '<span>-</span>'}
+                    </td>
+                </tr>`;
+        });
+    }
+
+    function openPembayaranModal(tagihanId, deskripsi) {
+        document.getElementById('pembayaranTagihanId').value = tagihanId;
+        document.getElementById('pembayaranModalTitle').textContent = `Konfirmasi: ${deskripsi}`;
+        document.getElementById('pembayaranForm').reset();
+        openModal('pembayaranModal');
+    }
+
+    async function handleKonfirmasiPembayaran(e) {
+        e.preventDefault();
+        const payload = {
+            tagihanId: parseInt(document.getElementById('pembayaranTagihanId').value),
+            jumlahBayar: parseFloat(document.getElementById('jumlahBayar').value),
+            metodePembayaran: document.getElementById('metodePembayaran').value,
+            buktiBayar: document.getElementById('buktiBayar').value
+        };
+        
+        try {
+            await sendData(`${API_BASE}/pembayaran`, 'POST', payload);
+            alert('Konfirmasi pembayaran berhasil dikirim dan sedang menunggu verifikasi oleh Admin.');
+            closeModal('pembayaranModal');
+            loadTagihanUntukPembayaran(); // Muat ulang data
+        } catch (error) {
+            alert(`Gagal mengirim konfirmasi: ${error.message}`);
+        }
+    }
+
+    // --- FUNGSI UNTUK ADMIN ---
+    async function loadRiwayatPembayaran() {
+        const data = await fetchData(`${API_BASE}/pembayaran`);
+        const tableBody = document.querySelector("#riwayatPembayaranTable tbody");
+        tableBody.innerHTML = '';
+        data.forEach(p => {
+             tableBody.innerHTML += `
+                <tr>
+                    <td>${p.namaMahasiswa}</td>
+                    <td>${new Date(p.tanggalBayar).toLocaleString('id-ID')}</td>
+                    <td>Rp ${p.jumlahBayar.toLocaleString('id-ID')}</td>
+                    <td>${p.metodePembayaran}</td>
+                    <td><span class="status-${p.statusVerifikasi.toLowerCase()}">${p.statusVerifikasi}</span></td>
+                    <td>
+                        ${p.statusVerifikasi === 'PENDING' ? `
+                            <button class="btn btn-sm btn-success" onclick="verifikasiPembayaran(${p.pembayaranId}, 'BERHASIL')">Setujui</button>
+                            <button class="btn btn-sm btn-danger" onclick="verifikasiPembayaran(${p.pembayaranId}, 'GAGAL')">Tolak</button>
+                        ` : '<span>-</span>'}
+                    </td>
+                </tr>`;
+        });
+    }
+
+    async function verifikasiPembayaran(pembayaranId, status) {
+         if (!confirm(`Anda yakin ingin mengubah status pembayaran ini menjadi "${status}"?`)) return;
+         
+         try {
+            await sendData(`${API_BASE}/pembayaran/${pembayaranId}/verifikasi`, 'PATCH', { statusVerifikasi: status });
+            alert('Status pembayaran berhasil diperbarui.');
+            loadRiwayatPembayaran(); // Muat ulang data
+         } catch(error) {
+            alert(`Gagal memperbarui status: ${error.message}`);
+         }
+    }
+    
+    // --- FUNGSI BANTU (UTILITIES) ---
+    async function fetchData(url) {
+        document.getElementById('loading').style.display = 'block';
+        try {
+            const response = await fetch(url, { headers: { 'Authorization': `Bearer ${jwtToken}` } });
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) window.location.href = 'index.html';
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return await response.json();
+        } finally {
+            document.getElementById('loading').style.display = 'none';
+        }
+    }
+
+    async function sendData(url, method, body) {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Authorization': `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Request gagal.' }));
+            throw new Error(errorData.message);
+        }
+        return response.status !== 204 ? await response.json().catch(() => null) : null;
+    }
+
+    function openModal(modalId) { document.getElementById(modalId).style.display = 'block'; }
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+</script>
+</body>
+</html>
