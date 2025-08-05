@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Akademik Mahasiswa</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #1877f2;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        header h2 {
+            margin: 0;
+            color: #1c1e21;
+        }
+        nav button, .button-link {
+            padding: 0.6rem 1rem;
+            background-color: #e4e6eb;
+            border: none;
+            border-radius: 6px;
+            color: #1c1e21;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            margin-left: 0.5rem;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        nav button.active, nav button:hover {
+            background-color: #1877f2;
+            color: white;
+        }
+        .content-section {
+            display: none;
+            margin-top: 1.5rem;
+        }
+        .content-section.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border: 1px solid #dddfe2;
+        }
+        th {
+            background-color: #f0f2f5;
+        }
+        .btn-ambil { background-color: #42b72a; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-hapus { background-color: #fa383e; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .presensi-detail { padding-left: 20px; }
+        #logoutButton { background-color: #fa383e; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h2 id="pageTitle">Kartu Rencana Studi (KRS)</h2>
+            <nav>
+                <button class="nav-btn active" data-target="krs">KRS</button>
+                <button class="nav-btn" data-target="khs">KHS</button>
+                <button class="nav-btn" data-target="presensi">Presensi</button>
+                <button class="nav-btn" data-target="jadwal">Jadwal Ujian</button>
+                <button class="nav-btn" data-target="ambil-kelas">Ambil Kelas</button>
+                <button id="logoutButton">Logout</button>
+            </nav>
+        </header>
+
+        <div id="loading">Memuat data...</div>
+
+        <section id="krs" class="content-section active">
+            <h3>Daftar Mata Kuliah yang Anda Ambil</h3>
+            <table id="krsTable">
+                <thead>
+                    <tr>
+                        <th>Kode MK</th>
+                        <th>Mata Kuliah</th>
+                        <th>SKS</th>
+                        <th>Dosen</th>
+                        <th>Jadwal</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="khs" class="content-section">
+            <h3>Kartu Hasil Studi (KHS)</h3>
+            <table id="khsTable">
+                <thead>
+                    <tr>
+                        <th>Kode MK</th>
+                        <th>Mata Kuliah</th>
+                        <th>SKS</th>
+                        <th>Tahun</th>
+                        <th>Semester</th>
+                        <th>Nilai Akhir</th>
+                        <th>Nilai Huruf</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <section id="presensi" class="content-section">
+            <h3>Rekapitulasi Presensi</h3>
+            <div id="presensiContent"></div>
+        </section>
+
+        <section id="jadwal" class="content-section">
+            <h3>Jadwal Ujian Aktif</h3>
+            <table id="jadwalUjianTable">
+                <thead>
+                    <tr>
+                        <th>Mata Kuliah</th>
+                        <th>Jenis Ujian</th>
+                        <th>Tanggal</th>
+                        <th>Jam</th>
+                        <th>Ruangan</th>
+                        <th>Dosen</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+        
+        <section id="ambil-kelas" class="content-section">
+            <h3>Daftar Kelas yang Ditawarkan</h3>
+             <table id="kelasTawarTable">
+                <thead>
+                    <tr>
+                        <th>Kode MK</th>
+                        <th>Mata Kuliah</th>
+                        <th>SKS</th>
+                        <th>Dosen</th>
+                        <th>Jadwal</th>
+                        <th>Ruangan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+    </div>
+
+    <script>
+        // URLs
+        const MAHASISWA_API = '/api/mahasiswa/me';
+        const GENERAL_API = '/api';
+
+        // Elements
+        const loadingDiv = document.getElementById('loading');
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const contentSections = document.querySelectorAll('.content-section');
+        const pageTitle = document.getElementById('pageTitle');
+        const logoutButton = document.getElementById('logoutButton');
+
+        let jwtToken = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            jwtToken = sessionStorage.getItem('jwtToken');
+            if (!jwtToken) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Default load
+            loadKrs();
+
+            // Navigation
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
+                    if(targetId) {
+                        switchView(targetId);
+                        pageTitle.textContent = button.textContent;
+                    }
+                });
+            });
+
+            logoutButton.addEventListener('click', () => {
+                sessionStorage.removeItem('jwtToken');
+                window.location.href = 'index.html';
+            });
+        });
+
+        function switchView(targetId) {
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            contentSections.forEach(sec => sec.classList.remove('active'));
+            
+            document.querySelector(`.nav-btn[data-target="${targetId}"]`).classList.add('active');
+            document.getElementById(targetId).classList.add('active');
+            
+            // Load data for the view
+            if(targetId === 'krs') loadKrs();
+            if(targetId === 'khs') loadKhs();
+            if(targetId === 'presensi') loadPresensi();
+            if(targetId === 'jadwal') loadJadwalUjian();
+            if(targetId === 'ambil-kelas') loadKelasTawar();
+        }
+        
+        // --- DATA LOADING FUNCTIONS ---
+
+        async function fetchData(url) {
+             loadingDiv.style.display = 'block';
+             try {
+                const response = await fetch(url, { headers: { 'Authorization': `Bearer ${jwtToken}` } });
+                if (!response.ok) {
+                    if (response.status === 403) window.location.href = 'index.html';
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+             } finally {
+                loadingDiv.style.display = 'none';
+             }
+        }
+
+        async function postData(url, body) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) throw new Error('Request failed');
+            return response.json();
+        }
+
+        async function deleteData(url) {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${jwtToken}` }
+            });
+            if (!response.ok) throw new Error('Delete failed');
+        }
+
+        async function loadKrs() {
+            const krsList = await fetchData(`${MAHASISWA_API}/krs`);
+            const tableBody = document.querySelector("#krsTable tbody");
+            tableBody.innerHTML = '';
+            krsList.forEach(krs => {
+                const canDelete = krs.statusPersetujuan === 'DIAJUKAN';
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${krs.kodeMataKuliah}</td>
+                        <td>${krs.namaMataKuliah}</td>
+                        <td>${krs.sks}</td>
+                        <td>${krs.namaDosen}</td>
+                        <td>${krs.jadwal}</td>
+                        <td>${krs.statusPersetujuan}</td>
+                        <td>
+                            ${canDelete ? `<button class="btn-hapus" onclick="hapusKrs(${krs.krsId})">Hapus</button>` : 'Terkunci'}
+                        </td>
+                    </tr>`;
+            });
+        }
+        
+        async function loadKhs() {
+            const khsList = await fetchData(`${MAHASISWA_API}/khs`);
+            const tableBody = document.querySelector("#khsTable tbody");
+            tableBody.innerHTML = '';
+            khsList.forEach(khs => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${khs.kodeMataKuliah}</td>
+                        <td>${khs.namaMataKuliah}</td>
+                        <td>${khs.sks}</td>
+                        <td>${khs.tahunAkademik}</td>
+                        <td>${khs.semester}</td>
+                        <td>${khs.nilaiAkhir}</td>
+                        <td>${khs.nilaiHuruf}</td>
+                    </tr>`;
+            });
+        }
+        
+        async function loadPresensi() {
+            const presensiList = await fetchData(`${MAHASISWA_API}/presensi`);
+            const contentDiv = document.getElementById("presensiContent");
+            contentDiv.innerHTML = '';
+            presensiList.forEach(p => {
+                 let detailHtml = p.detailPresensi.map(d => `<li>Pertemuan ${d.pertemuanKe} (${d.tanggal}): <strong>${d.statusHadir}</strong></li>`).join('');
+                 contentDiv.innerHTML += `
+                    <div>
+                        <h4>${p.namaMataKuliah} (${p.kodeMataKuliah})</h4>
+                        <p>Dosen: ${p.namaDosen}</p>
+                        <ul class="presensi-detail">${detailHtml}</ul>
+                    </div>
+                    <hr/>`;
+            });
+        }
+
+        async function loadJadwalUjian() {
+            const jadwalList = await fetchData(`${GENERAL_API}/jadwal/ujian`);
+            const tableBody = document.querySelector("#jadwalUjianTable tbody");
+            tableBody.innerHTML = '';
+            jadwalList.forEach(j => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${j.mataKuliah}</td>
+                        <td>${j.jenisUjian}</td>
+                        <td>${j.tanggalUjian}</td>
+                        <td>${j.jamMulai} - ${j.jamSelesai}</td>
+                        <td>${j.ruangan}</td>
+                        <td>${j.dosenPengampu}</td>
+                    </tr>`;
+            });
+        }
+
+        async function loadKelasTawar() {
+            const kelasList = await fetchData(`${GENERAL_API}/kelas`);
+            const tableBody = document.querySelector("#kelasTawarTable tbody");
+            tableBody.innerHTML = '';
+            kelasList.forEach(k => {
+                 tableBody.innerHTML += `
+                    <tr>
+                        <td>${k.kodeMataKuliah}</td>
+                        <td>${k.namaMataKuliah}</td>
+                        <td>${k.sks}</td>
+                        <td>${k.dosenPengajar}</td>
+                        <td>${k.jadwal}</td>
+                        <td>${k.ruangan}</td>
+                        <td><button class="btn-ambil" onclick="ambilKelas(${k.kelasId})">Ambil</button></td>
+                    </tr>`;
+            });
+        }
+        
+        // --- ACTION FUNCTIONS ---
+        
+        async function ambilKelas(kelasId) {
+            try {
+                await postData(`${MAHASISWA_API}/krs`, { kelasId });
+                alert('Kelas berhasil ditambahkan ke KRS!');
+                loadKelasTawar(); // Refresh list
+            } catch (error) {
+                alert('Gagal menambahkan kelas. Mungkin Anda sudah mengambilnya.');
+            }
+        }
+        
+        async function hapusKrs(krsId) {
+            if (confirm('Anda yakin ingin menghapus mata kuliah ini dari KRS?')) {
+                try {
+                    await deleteData(`${MAHASISWA_API}/krs/${krsId}`);
+                    alert('Kelas berhasil dihapus dari KRS.');
+                    loadKrs(); // Refresh list
+                } catch (error) {
+                    alert('Gagal menghapus kelas.');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
