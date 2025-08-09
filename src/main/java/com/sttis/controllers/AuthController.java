@@ -38,14 +38,17 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody LoginRequestDTO loginRequest) throws Exception {
-        authenticationManager.authenticate(
+        Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
         );
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
+        final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         final String jwt = jwtUtil.generateToken(userDetails);
 
-        return ResponseEntity.ok(new LoginResponseDTO(jwt));
+        // Mengambil profil pengguna dengan memanggil method yang sudah ada
+        UserProfileDTO userProfile = getMyProfile(authentication).getBody();
+
+        return ResponseEntity.ok(new LoginResponseDTO(jwt, userProfile));
     }
 
     @GetMapping("/me")
