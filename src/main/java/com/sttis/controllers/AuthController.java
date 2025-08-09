@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
-    private final UserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final MahasiswaRepository mahasiswaRepository;
@@ -29,7 +28,6 @@ public class AuthController {
 
     public AuthController(AuthenticationManager authenticationManager, UserDetailsService userDetailsService, JwtUtil jwtUtil, UserRepository userRepository, MahasiswaRepository mahasiswaRepository, DosenRepository dosenRepository) {
         this.authenticationManager = authenticationManager;
-        this.userDetailsService = userDetailsService;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.mahasiswaRepository = mahasiswaRepository;
