@@ -1,8 +1,10 @@
 package com.sttis.services;
 
+import com.sttis.dto.BiodataMahasiswaDTO; // IMPORT BARU
 import com.sttis.dto.DetailPresensiDTO;
 import com.sttis.dto.KhsDTO;
 import com.sttis.dto.RekapPresensiDTO;
+import com.sttis.models.entities.BiodataMahasiswa; // IMPORT BARU
 import com.sttis.models.entities.Krs;
 import com.sttis.models.entities.Mahasiswa;
 import com.sttis.models.entities.User;
@@ -88,6 +90,37 @@ public class AkademikService {
         }).collect(Collectors.toList());
         
         dto.setDetailPresensi(detailList);
+        return dto;
+    }
+
+
+    /**
+     * ENDPOINT BARU: Mengambil biodata untuk mahasiswa yang sedang login.
+     */
+    public BiodataMahasiswaDTO getMyBiodata(String username) {
+        Mahasiswa mahasiswa = getMahasiswaFromUsername(username);
+        BiodataMahasiswa biodata = mahasiswa.getBiodata();
+
+        // Jika biodata belum ada, kembalikan objek kosong agar tidak error di frontend.
+        if (biodata == null) {
+            return new BiodataMahasiswaDTO();
+        }
+        return convertToBiodataDTO(biodata);
+    }
+
+    // ... (helper getMahasiswaFromUsername, convertToKhsDTO, dll tetap ada) ...
+
+    /**
+     * HELPER BARU: Konversi entitas BiodataMahasiswa ke DTO.
+     */
+    private BiodataMahasiswaDTO convertToBiodataDTO(BiodataMahasiswa biodata) {
+        BiodataMahasiswaDTO dto = new BiodataMahasiswaDTO();
+        dto.setTempatLahir(biodata.getTempatLahir());
+        dto.setTanggalLahir(biodata.getTanggalLahir());
+        dto.setEmailPribadi(biodata.getEmailPribadi());
+        dto.setNomorTelepon(biodata.getNomorTelepon());
+        dto.setAlamat(biodata.getAlamat());
+        dto.setKontakDarurat(biodata.getKontakDarurat());
         return dto;
     }
 }

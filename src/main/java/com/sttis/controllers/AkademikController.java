@@ -1,5 +1,6 @@
 package com.sttis.controllers;
 
+import com.sttis.dto.BiodataMahasiswaDTO; // IMPORT BARU
 import com.sttis.dto.KhsDTO;
 import com.sttis.dto.RekapPresensiDTO;
 import com.sttis.services.AkademikService;
@@ -43,5 +44,17 @@ public class AkademikController {
         String username = authentication.getName();
         List<RekapPresensiDTO> rekapPresensi = akademikService.getMyRekapPresensi(username);
         return ResponseEntity.ok(rekapPresensi);
+    }
+
+        /**
+     * ENDPOINT BARU untuk mengambil biodata pribadi mahasiswa.
+     * Method: GET
+     * URL: /api/mahasiswa/me/biodata
+     */
+    @GetMapping("/biodata")
+    public ResponseEntity<BiodataMahasiswaDTO> getMyBiodata(Authentication authentication) {
+        String username = authentication.getName();
+        BiodataMahasiswaDTO biodata = akademikService.getMyBiodata(username);
+        return ResponseEntity.ok(biodata);
     }
 }
