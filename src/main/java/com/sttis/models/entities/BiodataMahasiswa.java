@@ -1,3 +1,4 @@
+// main/java/com/sttis/models/entities/BiodataMahasiswa.java
 package com.sttis.models.entities;
 
 import jakarta.persistence.*;
@@ -16,13 +17,14 @@ public class BiodataMahasiswa {
     @OneToOne
     @JoinColumn(name = "mahasiswa_id", referencedColumnName = "mahasiswaId", nullable = false, unique = true)
     private Mahasiswa mahasiswa;
-    
+
     @Lob
     private String alamat;
-    
+
     private String nomorTelepon;
     private String emailPribadi;
     private String tempatLahir;
     private LocalDate tanggalLahir;
+    private String jenisKelamin; // <-- DITAMBAHKAN
     private String kontakDarurat;
 }

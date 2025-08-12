@@ -122,7 +122,7 @@ public class DataSeeder implements CommandLineRunner {
             Mahasiswa savedMhs = mahasiswaRepository.save(mahasiswa);
             createdMahasiswas.add(savedMhs);
 
-            BiodataMahasiswa biodataMhs = new BiodataMahasiswa(); biodataMhs.setMahasiswa(savedMhs); biodataMhs.setAlamat(faker.address().fullAddress()); biodataMhs.setNomorTelepon(faker.phoneNumber().phoneNumber()); biodataMhs.setTempatLahir(faker.address().city()); biodataMhs.setTanggalLahir(faker.date().birthday().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+            BiodataMahasiswa biodataMhs = new BiodataMahasiswa(); biodataMhs.setMahasiswa(savedMhs); biodataMhs.setAlamat(faker.address().fullAddress()); biodataMhs.setNomorTelepon(faker.phoneNumber().phoneNumber()); biodataMhs.setTempatLahir(faker.address().city()); biodataMhs.setTanggalLahir(faker.date().birthday().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()); biodataMhs.setJenisKelamin(faker.options().option("Laki-laki", "Perempuan")); 
             biodataMahasiswaRepository.save(biodataMhs);
         }
 

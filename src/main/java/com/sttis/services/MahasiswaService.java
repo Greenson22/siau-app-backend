@@ -81,6 +81,7 @@ public class MahasiswaService {
         biodata.setNomorTelepon(biodataDTO.getNomorTelepon());
         biodata.setEmailPribadi(biodataDTO.getEmailPribadi());
         biodata.setKontakDarurat(biodataDTO.getKontakDarurat());
+        biodata.setJenisKelamin(biodataDTO.getJenisKelamin()); // <-- DITAMBAHKAN
 
         // 4. Simpan perubahan ke database
         return biodataMahasiswaRepository.save(biodata);

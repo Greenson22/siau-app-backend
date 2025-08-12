@@ -117,6 +117,7 @@ public class AkademikService {
         BiodataMahasiswaDTO dto = new BiodataMahasiswaDTO();
         dto.setTempatLahir(biodata.getTempatLahir());
         dto.setTanggalLahir(biodata.getTanggalLahir());
+        dto.setJenisKelamin(biodata.getJenisKelamin()); // <-- DITAMBAHKAN
         dto.setEmailPribadi(biodata.getEmailPribadi());
         dto.setNomorTelepon(biodata.getNomorTelepon());
         dto.setAlamat(biodata.getAlamat());
