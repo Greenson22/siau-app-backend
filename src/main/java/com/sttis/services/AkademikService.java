@@ -1,5 +1,6 @@
 package com.sttis.services;
 
+import com.sttis.dto.AkademikSummaryDTO;
 import com.sttis.dto.BiodataMahasiswaDTO; // IMPORT BARU
 import com.sttis.dto.DetailPresensiDTO;
 import com.sttis.dto.KhsDTO;
@@ -15,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.math.BigDecimal; // <-- IMPORT BARU
+import java.math.RoundingMode; // <-- IMPORT BARU
 
 @Service
 @Transactional(readOnly = true) // Gunakan readOnly untuk operasi GET
@@ -123,5 +126,51 @@ public class AkademikService {
         dto.setAlamat(biodata.getAlamat());
         dto.setKontakDarurat(biodata.getKontakDarurat());
         return dto;
+    }
+
+        /**
+     * BARU: Menghitung ringkasan akademik (IPK dan Total SKS) untuk mahasiswa.
+     */
+    public AkademikSummaryDTO getAkademikSummary(String username) {
+        Mahasiswa mahasiswa = getMahasiswaFromUsername(username);
+
+        List<Krs> krsList = krsRepository.findByMahasiswa(mahasiswa).stream()
+                .filter(krs -> krs.getNilaiHuruf() != null && !krs.getNilaiHuruf().isBlank())
+                .collect(Collectors.toList());
+
+        int totalSks = 0;
+        BigDecimal totalBobotSks = BigDecimal.ZERO;
+
+        for (Krs krs : krsList) {
+            int sks = krs.getKelas().getMataKuliah().getSks();
+            BigDecimal bobot = getBobotNilai(krs.getNilaiHuruf());
+            
+            totalSks += sks;
+            totalBobotSks = totalBobotSks.add(bobot.multiply(new BigDecimal(sks)));
+        }
+
+        BigDecimal ipk = BigDecimal.ZERO;
+        if (totalSks > 0) {
+            ipk = totalBobotSks.divide(new BigDecimal(totalSks), 2, RoundingMode.HALF_UP);
+        }
+
+        AkademikSummaryDTO summaryDTO = new AkademikSummaryDTO();
+        summaryDTO.setTotalSks(totalSks);
+        summaryDTO.setIpk(ipk);
+
+        return summaryDTO;
+    }
+
+        /**
+     * BARU: Helper untuk mendapatkan bobot dari nilai huruf.
+     */
+    private BigDecimal getBobotNilai(String nilaiHuruf) {
+        switch (nilaiHuruf.toUpperCase()) {
+            case "A": return new BigDecimal("4.0");
+            case "B": return new BigDecimal("3.0");
+            case "C": return new BigDecimal("2.0");
+            case "D": return new BigDecimal("1.0");
+            default: return BigDecimal.ZERO;
+        }
     }
 }

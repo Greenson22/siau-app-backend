@@ -1,5 +1,6 @@
 package com.sttis.controllers;
 
+import com.sttis.dto.AkademikSummaryDTO;
 import com.sttis.dto.BiodataMahasiswaDTO; // IMPORT BARU
 import com.sttis.dto.KhsDTO;
 import com.sttis.dto.RekapPresensiDTO;
@@ -56,5 +57,17 @@ public class AkademikController {
         String username = authentication.getName();
         BiodataMahasiswaDTO biodata = akademikService.getMyBiodata(username);
         return ResponseEntity.ok(biodata);
+    }
+
+    /**
+     * ENDPOINT BARU untuk mengambil ringkasan akademik (IPK dan Total SKS).
+     * Method: GET
+     * URL: /api/mahasiswa/me/summary
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<AkademikSummaryDTO> getMyAkademikSummary(Authentication authentication) {
+        String username = authentication.getName();
+        AkademikSummaryDTO summary = akademikService.getAkademikSummary(username);
+        return ResponseEntity.ok(summary);
     }
 }
