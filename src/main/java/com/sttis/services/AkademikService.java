@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.math.BigDecimal; // <-- IMPORT BARU
 import java.math.RoundingMode; // <-- IMPORT BARU
+import java.util.HashSet; // <-- IMPORT BARU
+import java.util.Set;      // <-- IMPORT BARU
 
 @Service
 @Transactional(readOnly = true) // Gunakan readOnly untuk operasi GET
@@ -131,6 +133,9 @@ public class AkademikService {
         /**
      * BARU: Menghitung ringkasan akademik (IPK dan Total SKS) untuk mahasiswa.
      */
+        /**
+     * BARU: Menghitung ringkasan akademik (IPK, Total SKS, dan Semester Aktif) untuk mahasiswa.
+     */
     public AkademikSummaryDTO getAkademikSummary(String username) {
         Mahasiswa mahasiswa = getMahasiswaFromUsername(username);
 
@@ -140,6 +145,7 @@ public class AkademikService {
 
         int totalSks = 0;
         BigDecimal totalBobotSks = BigDecimal.ZERO;
+        Set<String> periodeSelesai = new HashSet<>(); // Untuk menghitung semester unik
 
         for (Krs krs : krsList) {
             int sks = krs.getKelas().getMataKuliah().getSks();
@@ -147,6 +153,10 @@ public class AkademikService {
             
             totalSks += sks;
             totalBobotSks = totalBobotSks.add(bobot.multiply(new BigDecimal(sks)));
+
+            // Tambahkan kombinasi tahun akademik & semester ke Set
+            String periode = krs.getKelas().getTahunAkademik() + "-" + krs.getKelas().getSemester().name();
+            periodeSelesai.add(periode);
         }
 
         BigDecimal ipk = BigDecimal.ZERO;
@@ -154,13 +164,16 @@ public class AkademikService {
             ipk = totalBobotSks.divide(new BigDecimal(totalSks), 2, RoundingMode.HALF_UP);
         }
 
+        // Semester saat ini = jumlah periode yang selesai + 1
+        int semesterAktif = periodeSelesai.size() + 1;
+
         AkademikSummaryDTO summaryDTO = new AkademikSummaryDTO();
         summaryDTO.setTotalSks(totalSks);
         summaryDTO.setIpk(ipk);
+        summaryDTO.setSemesterAktif(semesterAktif); // Set nilai semester aktif
 
         return summaryDTO;
     }
-
         /**
      * BARU: Helper untuk mendapatkan bobot dari nilai huruf.
      */
