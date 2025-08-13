@@ -1,3 +1,4 @@
+// main/java/com/sttis/services/KeuanganService.java
 package com.sttis.services;
 
 import com.sttis.dto.*;
@@ -42,6 +43,20 @@ public class KeuanganService {
                 .map(this::convertToTagihanDTO)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * METHOD BARU: Mengambil riwayat pembayaran untuk mahasiswa yang sedang login.
+     */
+    public List<PembayaranDTO> getMyPembayaran(String username) {
+        Mahasiswa mahasiswa = getMahasiswaFromUsername(username);
+        
+        // Ambil semua tagihan mahasiswa, lalu kumpulkan semua pembayarannya menjadi satu list.
+        return tagihanRepo.findByMahasiswa(mahasiswa).stream()
+                .flatMap(tagihan -> tagihan.getPembayaranList().stream())
+                .map(this::convertToPembayaranDTO)
+                .collect(Collectors.toList());
+    }
+
 
     public void konfirmasiPembayaran(PembayaranInputDTO input, String username) {
         Mahasiswa mahasiswa = getMahasiswaFromUsername(username);
@@ -160,6 +175,7 @@ public class KeuanganService {
         dto.setPembayaranId(pembayaran.getPembayaranId());
         dto.setTagihanId(pembayaran.getTagihan().getTagihanId());
         dto.setNamaMahasiswa(pembayaran.getTagihan().getMahasiswa().getNamaLengkap());
+        dto.setDeskripsiTagihan(pembayaran.getTagihan().getDeskripsiTagihan()); // <-- BARIS BARU
         dto.setTanggalBayar(pembayaran.getTanggalBayar());
         dto.setJumlahBayar(pembayaran.getJumlahBayar());
         dto.setMetodePembayaran(pembayaran.getMetodePembayaran());

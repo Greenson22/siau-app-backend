@@ -1,3 +1,4 @@
+// main/java/com/sttis/controllers/KeuanganController.java
 package com.sttis.controllers;
 
 import com.sttis.dto.*;
@@ -25,6 +26,15 @@ public class KeuanganController {
     public ResponseEntity<List<TagihanDTO>> getMyTagihan(Authentication authentication) {
         return ResponseEntity.ok(keuanganService.getMyTagihan(authentication.getName()));
     }
+    
+    /**
+     * ENDPOINT BARU untuk melihat riwayat pembayaran milik sendiri.
+     */
+    @GetMapping("/mahasiswa/me/pembayaran")
+    public ResponseEntity<List<PembayaranDTO>> getMyPembayaran(Authentication authentication) {
+        return ResponseEntity.ok(keuanganService.getMyPembayaran(authentication.getName()));
+    }
+
 
     @PostMapping("/pembayaran")
     public ResponseEntity<String> konfirmasiPembayaran(@Valid @RequestBody PembayaranInputDTO input, Authentication authentication) {

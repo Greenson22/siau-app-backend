@@ -9,6 +9,7 @@ public class PembayaranDTO {
     private Integer pembayaranId;
     private Integer tagihanId;
     private String namaMahasiswa;
+    private String deskripsiTagihan;
     private LocalDateTime tanggalBayar;
     private BigDecimal jumlahBayar;
     private String metodePembayaran;
