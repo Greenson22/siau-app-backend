@@ -15,22 +15,25 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @Controller
-@Profile("dev") // <-- PENTING! Hanya aktif di profil development
+@Profile("dev")
 public class SourceCodeController {
 
     @GetMapping("/download-source")
     public ResponseEntity<StreamingResponseBody> downloadSource() {
 
-        // Path ke folder source code
         final Path sourceDir = Paths.get("src/main/java");
 
         StreamingResponseBody stream = outputStream -> {
             try (ZipOutputStream zos = new ZipOutputStream(outputStream)) {
                 Files.walk(sourceDir)
-                    .filter(path -> !Files.isDirectory(path))
+                    .filter(path -> !Files.isDirectory(path)) // Filter 1: Ambil file saja
+                    
+                    // ---- PERUBAHAN DI SINI ----
+                    // Filter 2: Abaikan file controller ini dari hasil stream
+                    .filter(path -> !path.getFileName().toString().equals("SourceCodeController.java"))
+                    
                     .forEach(path -> {
                         try {
-                            // Membuat struktur folder di dalam ZIP
                             ZipEntry zipEntry = new ZipEntry(sourceDir.relativize(path).toString());
                             zos.putNextEntry(zipEntry);
                             Files.copy(path, zos);
@@ -40,7 +43,6 @@ public class SourceCodeController {
                         }
                     });
             } catch (IOException e) {
-                // Handle exception
                 e.printStackTrace();
             }
         };
