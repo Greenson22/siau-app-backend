@@ -4,10 +4,12 @@ import com.sttis.dto.DosenBiodataUpdateDTO;
 import com.sttis.dto.DosenDTO;
 import com.sttis.services.DosenService;
 import jakarta.validation.Valid;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/dosen")
@@ -20,8 +22,15 @@ public class DosenController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DosenDTO>> getAllDosen() {
-        return ResponseEntity.ok(dosenService.getAllDosen());
+    public ResponseEntity<Page<DosenDTO>> getAllDosen(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer jurusan_id
+    ) {
+        Pageable pageable = PageRequest.of(page, limit);
+        Page<DosenDTO> dosenPage = dosenService.getAllDosen(pageable, search, jurusan_id);
+        return ResponseEntity.ok(dosenPage);
     }
 
     @GetMapping("/{id}")

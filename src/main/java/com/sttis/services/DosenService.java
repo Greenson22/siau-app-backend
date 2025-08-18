@@ -1,3 +1,5 @@
+// program/java-spring-boot/com/sttis/services/DosenService.java
+
 package com.sttis.services;
 
 import com.sttis.dto.DosenBiodataUpdateDTO;
@@ -12,6 +14,9 @@ import com.sttis.models.repos.DosenRepository;
 import com.sttis.models.repos.KelasRepository;
 import com.sttis.models.repos.UserRepository;
 
+import com.sttis.models.repos.specifications.DosenSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,15 +24,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional // Pindahkan transactional ke level class
+@Transactional
 public class DosenService {
 
     private final DosenRepository dosenRepository;
     private final BiodataDosenRepository biodataDosenRepository;
-    private final UserRepository userRepository; // <-- Tambah dependensi
-    private final KelasRepository kelasRepository; // <-- Tambah dependensi
+    private final UserRepository userRepository; 
+    private final KelasRepository kelasRepository; 
 
-    // Perbarui Constructor
     public DosenService(DosenRepository dosenRepository, BiodataDosenRepository biodataDosenRepository, UserRepository userRepository, KelasRepository kelasRepository) {
         this.dosenRepository = dosenRepository;
         this.biodataDosenRepository = biodataDosenRepository;
@@ -35,10 +39,11 @@ public class DosenService {
         this.kelasRepository = kelasRepository;
     }
 
-    public List<DosenDTO> getAllDosen() {
-        return dosenRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public Page<DosenDTO> getAllDosen(Pageable pageable, String search, Integer jurusanId) {
+        var spec = DosenSpecification.findByCriteria(search, jurusanId);
+        Page<Dosen> dosenPage = dosenRepository.findAll(spec, pageable);
+        return dosenPage.map(this::convertToDTO);
     }
 
     public DosenDTO getDosenById(Integer id) {
@@ -65,9 +70,6 @@ public class DosenService {
         return biodataDosenRepository.save(biodata);
     }
 
-        /**
-     * BARU: Mengambil daftar kelas yang diampu oleh dosen yang login.
-     */
     @Transactional(readOnly = true)
     public List<KelasDTO> getKelasDiampu(String username) {
         User user = userRepository.findByUsername(username)
@@ -83,10 +85,7 @@ public class DosenService {
                 .collect(Collectors.toList());
     }
 
-    // --- Helper Methods ---
-
     private DosenDTO convertToDTO(Dosen dosen) {
-        // ... (Tidak ada perubahan pada metode ini)
         DosenDTO dto = new DosenDTO();
         dto.setDosenId(dosen.getDosenId());
         dto.setNidn(dosen.getNidn());
@@ -101,9 +100,6 @@ public class DosenService {
         return dto;
     }
     
-    /**
-     * BARU: Helper method untuk mengubah entitas Kelas menjadi KelasDTO.
-     */
     private KelasDTO convertToKelasDTO(Kelas kelas) {
         KelasDTO dto = new KelasDTO();
         dto.setKelasId(kelas.getKelasId());
