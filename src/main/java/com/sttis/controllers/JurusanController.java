@@ -1,3 +1,5 @@
+// program/java-spring-boot/com/sttis/controllers/JurusanController.java
+
 package com.sttis.controllers;
 
 import com.sttis.dto.JurusanDTO;
@@ -39,5 +41,16 @@ public class JurusanController {
     public ResponseEntity<JurusanDTO> createJurusan(@Valid @RequestBody JurusanDTO jurusanDTO) {
         JurusanDTO createdJurusan = jurusanService.createJurusan(jurusanDTO);
         return new ResponseEntity<>(createdJurusan, HttpStatus.CREATED);
+    }
+
+    /**
+     * Endpoint untuk mengubah data jurusan yang sudah ada.
+     * Method: PUT
+     * URL: /api/jurusan/{id}
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<JurusanDTO> updateJurusan(@PathVariable Integer id, @Valid @RequestBody JurusanDTO jurusanDTO) {
+        JurusanDTO updatedJurusan = jurusanService.updateJurusan(id, jurusanDTO);
+        return ResponseEntity.ok(updatedJurusan);
     }
 }

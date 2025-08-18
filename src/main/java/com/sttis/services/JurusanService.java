@@ -1,3 +1,5 @@
+// program/java-spring-boot/com/sttis/services/JurusanService.java
+
 package com.sttis.services;
 
 import com.sttis.dto.JurusanDTO;
@@ -49,6 +51,23 @@ public class JurusanService {
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Mengubah data jurusan yang ada.
+     * @param id ID jurusan yang akan diubah.
+     * @param jurusanDTO Data baru untuk jurusan.
+     * @return JurusanDTO dari entitas yang berhasil diubah.
+     */
+    public JurusanDTO updateJurusan(Integer id, JurusanDTO jurusanDTO) {
+        Jurusan jurusan = jurusanRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Jurusan dengan ID " + id + " tidak ditemukan."));
+
+        jurusan.setNamaJurusan(jurusanDTO.getNamaJurusan());
+        jurusan.setFakultas(jurusanDTO.getFakultas());
+        
+        Jurusan updatedJurusan = jurusanRepository.save(jurusan);
+        return convertToDTO(updatedJurusan);
     }
 
     /**
