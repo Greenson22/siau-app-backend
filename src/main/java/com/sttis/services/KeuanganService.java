@@ -9,6 +9,7 @@ import com.sttis.models.entities.enums.StatusVerifikasi;
 import com.sttis.models.repos.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.sttis.dto.KomponenBiayaDTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -34,6 +35,25 @@ public class KeuanganService {
         this.mahasiswaRepo = mahasiswaRepo;
         this.komponenBiayaRepo = komponenBiayaRepo;
         this.userRepo = userRepo;
+    }
+
+        /**
+     * BARU: Mengambil semua komponen biaya.
+     */
+    public List<KomponenBiayaDTO> getAllKomponenBiaya() {
+        return komponenBiayaRepo.findAll().stream()
+                .map(this::convertToKomponenBiayaDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * BARU: Helper untuk konversi entitas KomponenBiaya ke DTO.
+     */
+    private KomponenBiayaDTO convertToKomponenBiayaDTO(KomponenBiaya komponen) {
+        KomponenBiayaDTO dto = new KomponenBiayaDTO();
+        dto.setKomponenId(komponen.getKomponenId());
+        dto.setNamaKomponen(komponen.getNamaKomponen());
+        return dto;
     }
 
     // --- Logika untuk Mahasiswa ---
