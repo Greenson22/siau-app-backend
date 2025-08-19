@@ -1,6 +1,8 @@
+// program/java-spring-boot/com/sttis/controllers/DashboardController.java
 package com.sttis.controllers;
 
 import com.sttis.dto.DashboardSummaryDTO;
+import com.sttis.dto.PendaftaranChartDTO; // <-- IMPORT BARU
 import com.sttis.services.DashboardService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,14 +19,20 @@ public class DashboardController {
         this.dashboardService = dashboardService;
     }
 
-    /**
-     * Endpoint untuk mendapatkan ringkasan data untuk dashboard admin.
-     * Method: GET
-     * URL: /api/dashboard/summary
-     */
     @GetMapping("/summary")
     public ResponseEntity<DashboardSummaryDTO> getSummary() {
         DashboardSummaryDTO summary = dashboardService.getDashboardSummary();
         return ResponseEntity.ok(summary);
+    }
+
+    /**
+     * ENDPOINT BARU untuk data chart pendaftaran.
+     * Method: GET
+     * URL: /api/dashboard/pendaftaran-chart
+     */
+    @GetMapping("/pendaftaran-chart")
+    public ResponseEntity<PendaftaranChartDTO> getPendaftaranChart() {
+        PendaftaranChartDTO chartData = dashboardService.getPendaftaranChartData();
+        return ResponseEntity.ok(chartData);
     }
 }
