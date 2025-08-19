@@ -1,18 +1,16 @@
+// program/java-spring-boot/com/sttis/services/DashboardService.java
 package com.sttis.services;
 
-import com.sttis.dto.ActionItemDTO;
-import com.sttis.dto.DashboardSummaryDTO;
-import com.sttis.dto.JurusanPendaftarDTO;
-import com.sttis.dto.PendaftaranChartDTO;
-import com.sttis.dto.PendingPembayaranDTO;
-import com.sttis.dto.TrenPendaftaranDTO;
+import com.sttis.dto.*;
+import com.sttis.models.entities.ActivityLog;
 import com.sttis.models.entities.Pembayaran;
 import com.sttis.models.entities.enums.StatusMahasiswa;
 import com.sttis.models.entities.enums.StatusVerifikasi;
+import com.sttis.models.repos.ActivityLogRepository;
 import com.sttis.models.repos.DosenRepository;
 import com.sttis.models.repos.MahasiswaRepository;
 import com.sttis.models.repos.PembayaranRepository;
-import com.sttis.models.repos.UserRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,15 +25,15 @@ public class DashboardService {
     private final MahasiswaRepository mahasiswaRepository;
     private final DosenRepository dosenRepository;
     private final PembayaranRepository pembayaranRepository;
-    private final UserRepository userRepository;
+    private final ActivityLogRepository activityLogRepository; // <-- DEPENDENCY BARU
 
 
     public DashboardService(MahasiswaRepository mahasiswaRepository, DosenRepository dosenRepository,
-                            PembayaranRepository pembayaranRepository, UserRepository userRepository) {
+                            PembayaranRepository pembayaranRepository, ActivityLogRepository activityLogRepository) { // <-- INJEKSI BARU
         this.mahasiswaRepository = mahasiswaRepository;
         this.dosenRepository = dosenRepository;
         this.pembayaranRepository = pembayaranRepository;
-        this.userRepository = userRepository;
+        this.activityLogRepository = activityLogRepository; // <-- SET DEPENDENCY
     }
 
     public DashboardSummaryDTO getDashboardSummary() {
@@ -76,14 +74,18 @@ public class DashboardService {
                 .collect(Collectors.toList());
         actionItemDTO.setPembayaranMenungguVerifikasi(pendingPembayaran);
 
-        // 2. Logika untuk pendaftar baru dan notifikasi lain bisa ditambahkan di sini
+        // 2. Ambil 5 log aktivitas terbaru
+        List<ActivityLogDTO> latestLogs = activityLogRepository.findAll(Sort.by(Sort.Direction.DESC, "timestamp")).stream()
+                .limit(5)
+                .map(this::convertToActivityLogDTO)
+                .collect(Collectors.toList());
+        actionItemDTO.setLatestActivities(latestLogs);
 
         return actionItemDTO;
     }
+    
+    // ... (Helper method lainnya) ...
 
-    /**
-     * BARU: Helper untuk konversi Pembayaran ke PendingPembayaranDTO.
-     */
     private PendingPembayaranDTO convertToPendingPembayaranDTO(Pembayaran pembayaran) {
         PendingPembayaranDTO dto = new PendingPembayaranDTO();
         dto.setPembayaranId(pembayaran.getPembayaranId());
@@ -91,6 +93,19 @@ public class DashboardService {
         dto.setDeskripsiTagihan(pembayaran.getTagihan().getDeskripsiTagihan());
         dto.setJumlahBayar(pembayaran.getJumlahBayar());
         dto.setTanggalBayar(pembayaran.getTanggalBayar());
+        return dto;
+    }
+    
+    private ActivityLogDTO convertToActivityLogDTO(ActivityLog log) {
+        ActivityLogDTO dto = new ActivityLogDTO();
+        dto.setLogId(log.getLogId());
+        if (log.getUser() != null) {
+            dto.setUsername(log.getUser().getUsername());
+        }
+        dto.setAksi(log.getAksi());
+        dto.setDeskripsi(log.getDeskripsi());
+        dto.setIpAddress(log.getIpAddress());
+        dto.setTimestamp(log.getTimestamp());
         return dto;
     }
 }
