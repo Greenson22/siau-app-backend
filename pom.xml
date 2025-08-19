@@ -54,11 +54,10 @@
       <artifactId>sqlite-jdbc</artifactId>
       <version>3.45.1.0</version>
     </dependency>
-    <dependency>
-        <groupId>org.hibernate.orm</groupId>
-        <artifactId>hibernate-community-dialects</artifactId>
-        <version>7.0.8.Final</version>
-    </dependency>
+  <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-community-dialects</artifactId>
+  </dependency>
 
     <dependency>
       <groupId>org.projectlombok</groupId>
