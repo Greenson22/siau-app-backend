@@ -114,4 +114,26 @@ public class UserService {
         }
         return userDTO;
     }
+
+        /**
+     * BARU: Mengubah password untuk pengguna yang sedang login.
+     * @param username Username dari pengguna yang terotentikasi.
+     * @param oldPassword Password lama yang diberikan oleh pengguna.
+     * @param newPassword Password baru yang akan disimpan.
+     */
+    @Transactional
+    public void changePassword(String username, String oldPassword, String newPassword) {
+        // 1. Cari user berdasarkan username
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User tidak ditemukan."));
+
+        // 2. Verifikasi password lama
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Password lama yang Anda masukkan salah.");
+        }
+
+        // 3. Enkripsi dan simpan password baru
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }
