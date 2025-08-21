@@ -43,7 +43,6 @@ public class AuthController {
         final UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         final String jwt = jwtUtil.generateToken(userDetails);
 
-        // Mengambil profil pengguna dengan memanggil method yang sudah ada
         UserProfileDTO userProfile = getMyProfile(authentication).getBody();
 
         return ResponseEntity.ok(new LoginResponseDTO(jwt, userProfile));
@@ -68,6 +67,15 @@ public class AuthController {
                 mhsDto.setNim(mhs.getNim());
                 mhsDto.setNamaLengkap(mhs.getNamaLengkap());
                 mhsDto.setStatus(mhs.getStatus().name());
+                
+                // --- PERBAIKAN DI SINI ---
+                // Cek jika Dosen PA ada, lalu set namanya.
+                if (mhs.getPembimbingAkademik() != null) {
+                    mhsDto.setNamaDosenPA(mhs.getPembimbingAkademik().getNamaLengkap());
+                } else {
+                    mhsDto.setNamaDosenPA("Belum Ditentukan");
+                }
+                
                 profileDTO.setMahasiswaInfo(mhsDto);
             }
         } else if ("Dosen".equalsIgnoreCase(user.getRole().getRoleName())) {
