@@ -1,25 +1,28 @@
 package com.sttis.services;
 
 import com.sttis.dto.AkademikSummaryDTO;
-import com.sttis.dto.BiodataMahasiswaDTO; // IMPORT BARU
+import com.sttis.dto.BiodataMahasiswaDTO;
 import com.sttis.dto.DetailPresensiDTO;
 import com.sttis.dto.KhsDTO;
+import com.sttis.dto.KelasDTO;
 import com.sttis.dto.RekapPresensiDTO;
-import com.sttis.models.entities.BiodataMahasiswa; // IMPORT BARU
+import com.sttis.models.entities.BiodataMahasiswa;
+import com.sttis.models.entities.Kelas;
 import com.sttis.models.entities.Krs;
 import com.sttis.models.entities.Mahasiswa;
 import com.sttis.models.entities.User;
+import com.sttis.models.entities.enums.StatusPersetujuan;
 import com.sttis.models.repos.KrsRepository;
 import com.sttis.models.repos.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.math.BigDecimal; // <-- IMPORT BARU
-import java.math.RoundingMode; // <-- IMPORT BARU
-import java.util.HashSet; // <-- IMPORT BARU
-import java.util.Set;      // <-- IMPORT BARU
 
 @Service
 @Transactional(readOnly = true) // Gunakan readOnly untuk operasi GET
@@ -34,6 +37,22 @@ public class AkademikService {
     }
 
     /**
+     * BARU: Mengambil jadwal kuliah mahasiswa berdasarkan KRS yang disetujui.
+     */
+    public List<KelasDTO> getMyJadwal(String username) {
+        Mahasiswa mahasiswa = getMahasiswaFromUsername(username);
+
+        return krsRepository.findByMahasiswa(mahasiswa).stream()
+                // Hanya ambil kelas dari KRS yang sudah disetujui
+                .filter(krs -> krs.getStatusPersetujuan() == StatusPersetujuan.DISETUJUI)
+                // Ambil objek Kelas dari setiap KRS
+                .map(Krs::getKelas)
+                // Konversi setiap Kelas menjadi KelasDTO
+                .map(this::convertToKelasDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Mengambil Kartu Hasil Studi (KHS) untuk mahasiswa yang sedang login.
      * Hanya menampilkan mata kuliah yang sudah memiliki nilai.
      */
@@ -45,7 +64,7 @@ public class AkademikService {
                 .map(this::convertToKhsDTO)
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * Mengambil rekapitulasi presensi per kelas untuk mahasiswa yang sedang login.
      */
@@ -93,7 +112,7 @@ public class AkademikService {
             detail.setStatusHadir(presensi.getStatusHadir().name());
             return detail;
         }).collect(Collectors.toList());
-        
+
         dto.setDetailPresensi(detailList);
         return dto;
     }
@@ -130,10 +149,10 @@ public class AkademikService {
         return dto;
     }
 
-        /**
+    /**
      * BARU: Menghitung ringkasan akademik (IPK dan Total SKS) untuk mahasiswa.
      */
-        /**
+    /**
      * BARU: Menghitung ringkasan akademik (IPK, Total SKS, dan Semester Aktif) untuk mahasiswa.
      */
     public AkademikSummaryDTO getAkademikSummary(String username) {
@@ -150,7 +169,7 @@ public class AkademikService {
         for (Krs krs : krsList) {
             int sks = krs.getKelas().getMataKuliah().getSks();
             BigDecimal bobot = getBobotNilai(krs.getNilaiHuruf());
-            
+
             totalSks += sks;
             totalBobotSks = totalBobotSks.add(bobot.multiply(new BigDecimal(sks)));
 
@@ -174,16 +193,38 @@ public class AkademikService {
 
         return summaryDTO;
     }
-        /**
+
+    /**
      * BARU: Helper untuk mendapatkan bobot dari nilai huruf.
      */
     private BigDecimal getBobotNilai(String nilaiHuruf) {
         switch (nilaiHuruf.toUpperCase()) {
-            case "A": return new BigDecimal("4.0");
-            case "B": return new BigDecimal("3.0");
-            case "C": return new BigDecimal("2.0");
-            case "D": return new BigDecimal("1.0");
-            default: return BigDecimal.ZERO;
+            case "A":
+                return new BigDecimal("4.0");
+            case "B":
+                return new BigDecimal("3.0");
+            case "C":
+                return new BigDecimal("2.0");
+            case "D":
+                return new BigDecimal("1.0");
+            default:
+                return BigDecimal.ZERO;
         }
+    }
+
+    /**
+     * HELPER BARU: Konversi entitas Kelas ke DTO.
+     */
+    private KelasDTO convertToKelasDTO(Kelas kelas) {
+        KelasDTO dto = new KelasDTO();
+        dto.setKelasId(kelas.getKelasId());
+        dto.setKodeMataKuliah(kelas.getMataKuliah().getKodeMatkul());
+        dto.setNamaMataKuliah(kelas.getMataKuliah().getNamaMatkul());
+        dto.setSks(kelas.getMataKuliah().getSks());
+        dto.setDosenPengajar(kelas.getDosen().getNamaLengkap());
+        // Menggabungkan hari dan jam menjadi satu string jadwal
+        dto.setJadwal(kelas.getHari() + ", " + kelas.getJamMulai());
+        dto.setRuangan(kelas.getRuangan());
+        return dto;
     }
 }

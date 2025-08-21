@@ -1,8 +1,9 @@
 package com.sttis.controllers;
 
 import com.sttis.dto.AkademikSummaryDTO;
-import com.sttis.dto.BiodataMahasiswaDTO; // IMPORT BARU
+import com.sttis.dto.BiodataMahasiswaDTO;
 import com.sttis.dto.KhsDTO;
+import com.sttis.dto.KelasDTO;
 import com.sttis.dto.RekapPresensiDTO;
 import com.sttis.services.AkademikService;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,18 @@ public class AkademikController {
 
     public AkademikController(AkademikService akademikService) {
         this.akademikService = akademikService;
+    }
+
+    /**
+     * ENDPOINT BARU untuk mengambil jadwal kuliah semester ini.
+     * Method: GET
+     * URL: /api/mahasiswa/me/jadwal
+     */
+    @GetMapping("/jadwal")
+    public ResponseEntity<List<KelasDTO>> getMyJadwal(Authentication authentication) {
+        String username = authentication.getName();
+        List<KelasDTO> jadwal = akademikService.getMyJadwal(username);
+        return ResponseEntity.ok(jadwal);
     }
 
     /**
@@ -47,7 +60,7 @@ public class AkademikController {
         return ResponseEntity.ok(rekapPresensi);
     }
 
-        /**
+    /**
      * ENDPOINT BARU untuk mengambil biodata pribadi mahasiswa.
      * Method: GET
      * URL: /api/mahasiswa/me/biodata
