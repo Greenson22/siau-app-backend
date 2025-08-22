@@ -10,4 +10,5 @@ public class MahasiswaDTO {
     private String status;
     private String namaJurusan;
     private String namaDosenPA; // Nama Dosen Pembimbing Akademik
+    private String fotoProfil; // <-- FIELD BARU DITAMBAHKAN
 }

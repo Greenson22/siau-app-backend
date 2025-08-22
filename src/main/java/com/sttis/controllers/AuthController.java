@@ -16,6 +16,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -32,6 +35,18 @@ public class AuthController {
         this.userRepository = userRepository;
         this.mahasiswaRepository = mahasiswaRepository;
         this.dosenRepository = dosenRepository;
+    }
+
+    // Helper sederhana untuk mendapatkan inisial
+    private String getInitials(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return "?";
+        }
+        return Arrays.stream(name.split(" "))
+                     .filter(s -> !s.isEmpty())
+                     .map(s -> s.substring(0, 1))
+                     .collect(Collectors.joining())
+                     .toUpperCase();
     }
 
     @PostMapping("/login")
@@ -67,19 +82,21 @@ public class AuthController {
                 mhsDto.setNim(mhs.getNim());
                 mhsDto.setNamaLengkap(mhs.getNamaLengkap());
                 mhsDto.setStatus(mhs.getStatus().name());
-                
-                // --- PERBAIKAN DI SINI ---
-                // Menambahkan pengambilan nama jurusan
+
                 if (mhs.getJurusan() != null) {
                     mhsDto.setNamaJurusan(mhs.getJurusan().getNamaJurusan());
                 }
-
-                // Cek jika Dosen PA ada, lalu set namanya.
+                
                 if (mhs.getPembimbingAkademik() != null) {
                     mhsDto.setNamaDosenPA(mhs.getPembimbingAkademik().getNamaLengkap());
                 } else {
                     mhsDto.setNamaDosenPA("Belum Ditentukan");
                 }
+                
+                // Membuat URL foto profil di backend
+                String inisial = getInitials(mhs.getNamaLengkap());
+                String fotoUrl = "https://placehold.co/128x128/FCA5A5/991B1B?text=" + inisial;
+                mhsDto.setFotoProfil(fotoUrl);
                 
                 profileDTO.setMahasiswaInfo(mhsDto);
             }
