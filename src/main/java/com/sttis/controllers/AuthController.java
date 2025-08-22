@@ -69,6 +69,11 @@ public class AuthController {
                 mhsDto.setStatus(mhs.getStatus().name());
                 
                 // --- PERBAIKAN DI SINI ---
+                // Menambahkan pengambilan nama jurusan
+                if (mhs.getJurusan() != null) {
+                    mhsDto.setNamaJurusan(mhs.getJurusan().getNamaJurusan());
+                }
+
                 // Cek jika Dosen PA ada, lalu set namanya.
                 if (mhs.getPembimbingAkademik() != null) {
                     mhsDto.setNamaDosenPA(mhs.getPembimbingAkademik().getNamaLengkap());
