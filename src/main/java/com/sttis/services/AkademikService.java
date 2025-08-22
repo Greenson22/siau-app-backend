@@ -199,16 +199,16 @@ public class AkademikService {
      */
     private BigDecimal getBobotNilai(String nilaiHuruf) {
         switch (nilaiHuruf.toUpperCase()) {
-            case "A":
-                return new BigDecimal("4.0");
-            case "B":
-                return new BigDecimal("3.0");
-            case "C":
-                return new BigDecimal("2.0");
-            case "D":
-                return new BigDecimal("1.0");
-            default:
-                return BigDecimal.ZERO;
+            case "A": return new BigDecimal("4.0");
+            case "A-": return new BigDecimal("3.7");
+            case "B+": return new BigDecimal("3.3");
+            case "B": return new BigDecimal("3.0");
+            case "B-": return new BigDecimal("2.7");
+            case "C+": return new BigDecimal("2.3");
+            case "C": return new BigDecimal("2.0");
+            case "D": return new BigDecimal("1.0");
+            case "E": return new BigDecimal("0.0");
+            default: return BigDecimal.ZERO;
         }
     }
 
