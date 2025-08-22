@@ -4,6 +4,7 @@ package com.sttis.services;
 
 import com.sttis.dto.DosenBiodataUpdateDTO;
 import com.sttis.dto.DosenDTO;
+import com.sttis.dto.DosenDashboardSummaryDTO;
 import com.sttis.dto.KelasDTO;
 import com.sttis.models.entities.BiodataDosen;
 import com.sttis.models.entities.Dosen;
@@ -83,6 +84,31 @@ public class DosenService {
         return kelasList.stream()
                 .map(this::convertToKelasDTO)
                 .collect(Collectors.toList());
+    }
+
+        /**
+     * BARU: Mengambil data ringkasan untuk dashboard dosen.
+     */
+    @Transactional(readOnly = true)
+    public DosenDashboardSummaryDTO getDosenDashboardSummary(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
+        Dosen dosen = user.getDosen();
+        if (dosen == null) {
+            throw new IllegalStateException("User ini bukan seorang dosen.");
+        }
+        
+        // Hitung total SKS yang diampu
+        int totalSksMengajar = dosen.getKelasMengajar().stream()
+                .mapToInt(kelas -> kelas.getMataKuliah().getSks())
+                .sum();
+        
+        DosenDashboardSummaryDTO dto = new DosenDashboardSummaryDTO();
+        dto.setTotalMahasiswaBimbingan(dosen.getMahasiswaBimbingan().size());
+        dto.setTotalKelasMengajar(dosen.getKelasMengajar().size());
+        dto.setTotalSksMengajar(totalSksMengajar);
+        
+        return dto;
     }
 
     private DosenDTO convertToDTO(Dosen dosen) {

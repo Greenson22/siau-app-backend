@@ -1,5 +1,6 @@
 package com.sttis.controllers;
 
+import com.sttis.dto.DosenDashboardSummaryDTO; // Impor DTO yang baru
 import com.sttis.dto.KelasDTO;
 import com.sttis.services.DosenService;
 import org.springframework.http.ResponseEntity;
@@ -30,5 +31,17 @@ public class DosenMeController {
         String username = authentication.getName();
         List<KelasDTO> kelasList = dosenService.getKelasDiampu(username);
         return ResponseEntity.ok(kelasList);
+    }
+
+    /**
+     * ENDPOINT BARU: Mengambil data ringkasan untuk dashboard dosen yang login.
+     * Method: GET
+     * URL: /api/dosen/me/summary
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<DosenDashboardSummaryDTO> getDashboardSummary(Authentication authentication) {
+        String username = authentication.getName();
+        DosenDashboardSummaryDTO summary = dosenService.getDosenDashboardSummary(username);
+        return ResponseEntity.ok(summary);
     }
 }
