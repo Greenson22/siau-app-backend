@@ -3,6 +3,7 @@ package com.sttis.services;
 import com.sttis.dto.AkademikSummaryDTO;
 import com.sttis.dto.BiodataMahasiswaDTO;
 import com.sttis.dto.DetailPresensiDTO;
+import com.sttis.dto.IpsDataDTO;
 import com.sttis.dto.KhsDTO;
 import com.sttis.dto.KelasDTO;
 import com.sttis.dto.RekapPresensiDTO;
@@ -23,6 +24,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Service
 @Transactional(readOnly = true) // Gunakan readOnly untuk operasi GET
@@ -132,7 +138,63 @@ public class AkademikService {
         return convertToBiodataDTO(biodata);
     }
 
-    // ... (helper getMahasiswaFromUsername, convertToKhsDTO, dll tetap ada) ...
+        /**
+     * BARU: Mengambil riwayat IPS per semester untuk grafik.
+     */
+    public IpsDataDTO getIpsHistory(String username) {
+        Mahasiswa mahasiswa = getMahasiswaFromUsername(username);
+
+        // 1. Ambil semua KHS yang sudah dinilai
+        List<Krs> krsBernilai = krsRepository.findByMahasiswa(mahasiswa).stream()
+                .filter(krs -> krs.getNilaiHuruf() != null && !krs.getNilaiHuruf().isBlank())
+                .collect(Collectors.toList());
+
+        // 2. Kelompokkan KHS berdasarkan periode (Tahun Akademik + Semester)
+        Map<String, List<Krs>> krsPerSemester = krsBernilai.stream()
+                .collect(Collectors.groupingBy(krs ->
+                        krs.getKelas().getTahunAkademik() + " " + krs.getKelas().getSemester()
+                ));
+
+        // 3. Urutkan semester berdasarkan tahun dan semester (Ganjil -> Genap)
+        Map<String, List<Krs>> sortedKrsPerSemester = krsPerSemester.entrySet().stream()
+                .sorted(Comparator.comparing(entry -> {
+                    String[] parts = entry.getKey().split(" ");
+                    String tahun = parts[0];
+                    int semesterOrder = parts[1].equalsIgnoreCase("GANJIL") ? 1 : 2;
+                    return tahun + "-" + semesterOrder;
+                }))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+
+
+        // 4. Hitung IPS untuk setiap semester dan format untuk DTO
+        List<String> labels = new ArrayList<>();
+        List<BigDecimal> data = new ArrayList<>();
+        int semesterCounter = 1;
+
+        for (Map.Entry<String, List<Krs>> entry : sortedKrsPerSemester.entrySet()) {
+            labels.add("Sm " + semesterCounter++);
+            
+            BigDecimal totalBobotSks = BigDecimal.ZERO;
+            int totalSks = 0;
+
+            for (Krs krs : entry.getValue()) {
+                int sks = krs.getKelas().getMataKuliah().getSks();
+                BigDecimal bobot = getBobotNilai(krs.getNilaiHuruf());
+                totalBobotSks = totalBobotSks.add(bobot.multiply(new BigDecimal(sks)));
+                totalSks += sks;
+            }
+
+            BigDecimal ips = (totalSks > 0)
+                    ? totalBobotSks.divide(new BigDecimal(totalSks), 2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+            data.add(ips);
+        }
+
+        IpsDataDTO dto = new IpsDataDTO();
+        dto.setLabels(labels);
+        dto.setData(data);
+        return dto;
+    }
 
     /**
      * HELPER BARU: Konversi entitas BiodataMahasiswa ke DTO.

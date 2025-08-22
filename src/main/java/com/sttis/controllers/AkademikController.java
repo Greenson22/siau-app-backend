@@ -5,6 +5,7 @@ import com.sttis.dto.BiodataMahasiswaDTO;
 import com.sttis.dto.KhsDTO;
 import com.sttis.dto.KelasDTO;
 import com.sttis.dto.RekapPresensiDTO;
+import com.sttis.dto.IpsDataDTO;
 import com.sttis.services.AkademikService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -82,5 +83,17 @@ public class AkademikController {
         String username = authentication.getName();
         AkademikSummaryDTO summary = akademikService.getAkademikSummary(username);
         return ResponseEntity.ok(summary);
+    }
+
+        /**
+     * ENDPOINT BARU untuk mengambil riwayat IPS untuk grafik.
+     * Method: GET
+     * URL: /api/mahasiswa/me/ips-history
+     */
+    @GetMapping("/ips-history")
+    public ResponseEntity<IpsDataDTO> getMyIpsHistory(Authentication authentication) {
+        String username = authentication.getName();
+        IpsDataDTO ipsHistory = akademikService.getIpsHistory(username);
+        return ResponseEntity.ok(ipsHistory);
     }
 }
