@@ -1,3 +1,5 @@
+// program/java-spring-boot/com/sttis/services/DosenPaService.java
+
 package com.sttis.services;
 
 import com.sttis.dto.KrsDTO;
@@ -12,6 +14,7 @@ import com.sttis.models.repos.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays; // <-- TAMBAHKAN IMPORT INI
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -68,6 +71,19 @@ public class DosenPaService {
         return dosen;
     }
 
+    // --- AWAL PERUBAHAN ---
+    // Helper sederhana untuk mendapatkan inisial
+    private String getInitials(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return "?";
+        }
+        return Arrays.stream(name.split(" "))
+                     .filter(s -> !s.isEmpty())
+                     .map(s -> s.substring(0, 1))
+                     .collect(Collectors.joining())
+                     .toUpperCase();
+    }
+
     private MahasiswaDTO convertToMahasiswaDTO(Mahasiswa mahasiswa) {
         MahasiswaDTO dto = new MahasiswaDTO();
         dto.setMahasiswaId(mahasiswa.getMahasiswaId());
@@ -77,8 +93,15 @@ public class DosenPaService {
         if (mahasiswa.getJurusan() != null) {
             dto.setNamaJurusan(mahasiswa.getJurusan().getNamaJurusan());
         }
+
+        // Menambahkan logika pembuatan URL foto profil
+        String inisial = getInitials(mahasiswa.getNamaLengkap());
+        String fotoUrl = "https://placehold.co/128x128/FCA5A5/991B1B?text=" + inisial;
+        dto.setFotoProfil(fotoUrl);
+        
         return dto;
     }
+    // --- AKHIR PERUBAHAN ---
 
     private KrsDTO convertToKrsDTO(Krs krs) {
         KrsDTO dto = new KrsDTO();
