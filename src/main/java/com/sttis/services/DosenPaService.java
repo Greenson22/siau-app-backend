@@ -1,8 +1,8 @@
 // program/java-spring-boot/com/sttis/services/DosenPaService.java
-
 package com.sttis.services;
 
 import com.sttis.dto.KrsDTO;
+import com.sttis.dto.MahasiswaAkademikProfileDTO;
 import com.sttis.dto.MahasiswaDTO;
 import com.sttis.models.entities.Dosen;
 import com.sttis.models.entities.Krs;
@@ -14,7 +14,7 @@ import com.sttis.models.repos.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays; // <-- TAMBAHKAN IMPORT INI
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,11 +25,13 @@ public class DosenPaService {
     private final UserRepository userRepository;
     private final MahasiswaRepository mahasiswaRepository;
     private final KrsRepository krsRepository;
+    private final AkademikService akademikService; // <-- Injeksi Service Akademik
 
-    public DosenPaService(UserRepository userRepository, MahasiswaRepository mahasiswaRepository, KrsRepository krsRepository) {
+    public DosenPaService(UserRepository userRepository, MahasiswaRepository mahasiswaRepository, KrsRepository krsRepository, AkademikService akademikService) {
         this.userRepository = userRepository;
         this.mahasiswaRepository = mahasiswaRepository;
         this.krsRepository = krsRepository;
+        this.akademikService = akademikService; // <-- Inisialisasi service
     }
 
     /**
@@ -50,7 +52,6 @@ public class DosenPaService {
         Mahasiswa mahasiswa = mahasiswaRepository.findById(mahasiswaId)
                 .orElseThrow(() -> new RuntimeException("Mahasiswa dengan ID " + mahasiswaId + " tidak ditemukan."));
 
-        // Validasi: Pastikan mahasiswa tersebut adalah bimbingan Dosen PA yang login
         if (mahasiswa.getPembimbingAkademik() == null || !mahasiswa.getPembimbingAkademik().equals(dosenPa)) {
             throw new SecurityException("Anda bukan Dosen PA dari mahasiswa ini.");
         }
@@ -58,6 +59,30 @@ public class DosenPaService {
         return krsRepository.findByMahasiswa(mahasiswa).stream()
                 .map(this::convertToKrsDTO)
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * BARU: Mengambil profil akademik lengkap untuk mahasiswa bimbingan tertentu.
+     */
+    public MahasiswaAkademikProfileDTO getMahasiswaAkademikProfile(Integer mahasiswaId, String username) {
+        Dosen dosenPa = getDosenFromUsername(username);
+        Mahasiswa mahasiswa = mahasiswaRepository.findById(mahasiswaId)
+                .orElseThrow(() -> new RuntimeException("Mahasiswa dengan ID " + mahasiswaId + " tidak ditemukan."));
+
+        // Validasi: Pastikan mahasiswa tersebut adalah bimbingan Dosen PA yang login
+        if (mahasiswa.getPembimbingAkademik() == null || !mahasiswa.getPembimbingAkademik().equals(dosenPa)) {
+            throw new SecurityException("Anda bukan Dosen PA dari mahasiswa ini.");
+        }
+        
+        // Panggil service akademik untuk mendapatkan data
+        MahasiswaAkademikProfileDTO dto = new MahasiswaAkademikProfileDTO();
+        String mhsUsername = mahasiswa.getUser().getUsername();
+        
+        dto.setSummary(akademikService.getAkademikSummary(mhsUsername));
+        dto.setKhsData(akademikService.getMyKhs(mhsUsername));
+        dto.setIpsHistory(akademikService.getIpsHistory(mhsUsername));
+        
+        return dto;
     }
     
     // Helper Methods
@@ -71,8 +96,6 @@ public class DosenPaService {
         return dosen;
     }
 
-    // --- AWAL PERUBAHAN ---
-    // Helper sederhana untuk mendapatkan inisial
     private String getInitials(String name) {
         if (name == null || name.trim().isEmpty()) {
             return "?";
@@ -93,15 +116,11 @@ public class DosenPaService {
         if (mahasiswa.getJurusan() != null) {
             dto.setNamaJurusan(mahasiswa.getJurusan().getNamaJurusan());
         }
-
-        // Menambahkan logika pembuatan URL foto profil
         String inisial = getInitials(mahasiswa.getNamaLengkap());
         String fotoUrl = "https://placehold.co/128x128/FCA5A5/991B1B?text=" + inisial;
         dto.setFotoProfil(fotoUrl);
-        
         return dto;
     }
-    // --- AKHIR PERUBAHAN ---
 
     private KrsDTO convertToKrsDTO(Krs krs) {
         KrsDTO dto = new KrsDTO();
@@ -110,7 +129,9 @@ public class DosenPaService {
         dto.setKodeMataKuliah(krs.getKelas().getMataKuliah().getKodeMatkul());
         dto.setNamaMataKuliah(krs.getKelas().getMataKuliah().getNamaMatkul());
         dto.setSks(krs.getKelas().getMataKuliah().getSks());
+        dto.setNamaDosen(krs.getKelas().getDosen().getNamaLengkap());
         dto.setStatusPersetujuan(krs.getStatusPersetujuan().name());
+        dto.setJadwal(krs.getKelas().getHari() + ", " + krs.getKelas().getJamMulai());
         return dto;
     }
 }
