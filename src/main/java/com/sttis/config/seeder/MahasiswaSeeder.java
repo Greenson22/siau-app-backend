@@ -59,7 +59,7 @@ public class MahasiswaSeeder {
                 .filter(d -> d.getNidn().equals("0912048801")).findFirst().orElseThrow();
         List<Dosen> allDosens = dosenRepository.findAll();
 
-        // Create Demo Mahasiswa
+        // Create Demo Mahasiswa (NIM tetap 20210118)
         User mhsDemoUser = new User();
         mhsDemoUser.setUsername("20210118");
         mhsDemoUser.setPassword(passwordEncoder.encode("password"));
@@ -85,10 +85,15 @@ public class MahasiswaSeeder {
         biodataMhsDemo.setJenisKelamin("Laki-laki");
         biodataMahasiswaRepository.save(biodataMhsDemo);
 
-        // Create Other Mahasiswa
+        // --- PERUBAHAN DI SINI ---
+        // Create Other Mahasiswa with sequential NIM as username
+        long nimCounter = 20210119L; // <-- Mulai dari NIM 20210119
+
         for (int i = 0; i < 10; i++) {
+            String currentNim = String.valueOf(nimCounter);
+            
             User mhsUser = new User();
-            mhsUser.setUsername(faker.name().username());
+            mhsUser.setUsername(currentNim); // <-- Gunakan NIM sebagai username
             mhsUser.setPassword(passwordEncoder.encode("mahasiswa123"));
             mhsUser.setRole(mahasiswaRole);
             User savedMhsUser = userRepository.save(mhsUser);
@@ -96,7 +101,7 @@ public class MahasiswaSeeder {
             Mahasiswa mahasiswa = new Mahasiswa();
             mahasiswa.setUser(savedMhsUser);
             mahasiswa.setNamaLengkap(faker.name().fullName());
-            mahasiswa.setNim("2025" + faker.number().digits(4));
+            mahasiswa.setNim(currentNim); // <-- Gunakan NIM yang sama
             mahasiswa.setJurusan(i % 2 == 0 ? teologi : pak);
             mahasiswa.setStatus(StatusMahasiswa.AKTIF);
             mahasiswa.setPembimbingAkademik(allDosens.get(faker.number().numberBetween(0, allDosens.size())));
@@ -111,6 +116,8 @@ public class MahasiswaSeeder {
             biodataMhs.setTanggalLahir(faker.date().birthday().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
             biodataMhs.setJenisKelamin(faker.options().option("Laki-laki", "Perempuan")); 
             biodataMahasiswaRepository.save(biodataMhs);
+
+            nimCounter++; // <-- Naikkan NIM untuk mahasiswa berikutnya
         }
         
         System.out.println("Seeder: Data Mahasiswa berhasil dibuat.");
