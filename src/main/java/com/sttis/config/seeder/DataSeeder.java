@@ -9,23 +9,23 @@ public class DataSeeder implements CommandLineRunner {
 
     private final RoleSeeder roleSeeder;
     private final JurusanSeeder jurusanSeeder;
-    private final UserAndBiodataSeeder userAndBiodataSeeder;
+    private final UserSeeder userSeeder; // <-- PERUBAHAN DI SINI
     private final AkademikSeeder akademikSeeder;
     private final KeuanganSeeder keuanganSeeder;
     private final LogAndPengumumanSeeder logAndPengumumanSeeder;
 
-    // Injeksi semua seeder sebagai dependensi
+    // Injeksi seeder utama, termasuk UserSeeder yang baru
     public DataSeeder(
         RoleSeeder roleSeeder, 
         JurusanSeeder jurusanSeeder, 
-        UserAndBiodataSeeder userAndBiodataSeeder, 
+        UserSeeder userSeeder, // <-- PERUBAHAN DI SINI
         AkademikSeeder akademikSeeder, 
         KeuanganSeeder keuanganSeeder, 
         LogAndPengumumanSeeder logAndPengumumanSeeder
     ) {
         this.roleSeeder = roleSeeder;
         this.jurusanSeeder = jurusanSeeder;
-        this.userAndBiodataSeeder = userAndBiodataSeeder;
+        this.userSeeder = userSeeder; // <-- PERUBAHAN DI SINI
         this.akademikSeeder = akademikSeeder;
         this.keuanganSeeder = keuanganSeeder;
         this.logAndPengumumanSeeder = logAndPengumumanSeeder;
@@ -41,13 +41,15 @@ public class DataSeeder implements CommandLineRunner {
 
         System.out.println("Menjalankan Seeder untuk semua tabel...");
         
-        // Panggil setiap seeder secara berurutan untuk menjaga integritas data
+        // Panggil setiap seeder secara berurutan
         roleSeeder.seed();
         jurusanSeeder.seed();
-        userAndBiodataSeeder.seed();
-        akademikSeeder.seed(userAndBiodataSeeder.getCreatedDosens(), userAndBiodataSeeder.getCreatedMahasiswas());
-        keuanganSeeder.seed(userAndBiodataSeeder.getCreatedMahasiswas());
-        logAndPengumumanSeeder.seed(userAndBiodataSeeder.getAdminUser());
+        userSeeder.seed(); // <-- Cukup panggil ini untuk semua data pengguna
+
+        // Gunakan getter dari userSeeder untuk mendapatkan data yang dibutuhkan seeder lain
+        akademikSeeder.seed(userSeeder.getCreatedDosens(), userSeeder.getCreatedMahasiswas());
+        keuanganSeeder.seed(userSeeder.getCreatedMahasiswas());
+        logAndPengumumanSeeder.seed(userSeeder.getAdminUser());
 
         System.out.println("Seeder selesai dijalankan.");
     }
