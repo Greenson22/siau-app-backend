@@ -28,6 +28,9 @@ public class Krs {
 
     private BigDecimal nilaiAkhir;
     private String nilaiHuruf;
+    
+    @Lob // Tipe data TEXT untuk catatan yang bisa panjang
+    private String catatanPenolakan; // <-- KOLOM BARU
 
     @OneToMany(mappedBy = "krs")
     private List<PresensiMahasiswa> presensiList;

@@ -57,6 +57,14 @@ public class KrsManagementService {
         }
 
         krs.setStatusPersetujuan(StatusPersetujuan.valueOf(persetujuanInput.getStatusPersetujuan().toUpperCase()));
+
+        // LOGIKA BARU: Simpan catatan jika status DITOLAK
+        if (krs.getStatusPersetujuan() == StatusPersetujuan.DITOLAK) {
+            krs.setCatatanPenolakan(persetujuanInput.getCatatanPenolakan());
+        } else {
+            krs.setCatatanPenolakan(null); // Kosongkan catatan jika disetujui
+        }
+        
         return krsRepository.save(krs);
     }
 
