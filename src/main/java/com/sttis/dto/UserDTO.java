@@ -1,4 +1,4 @@
-package com.sttis.dto; // Buat package baru bernama 'dto'
+package com.sttis.dto;
 
 import lombok.Data;
 
@@ -6,5 +6,6 @@ import lombok.Data;
 public class UserDTO {
     private Integer userId;
     private String username;
-    private String roleName; // Kita hanya tampilkan nama rolenya
+    private String roleName;
+    private String namaLengkap; // <-- FIELD BARU DITAMBAHKAN
 }

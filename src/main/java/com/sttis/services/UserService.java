@@ -51,28 +51,25 @@ public class UserService {
      * @param registrationDTO Data registrasi dari klien.
      * @return Entitas User yang baru dibuat.
      */
-    @Transactional // Menjamin semua operasi database (save user, mahasiswa, etc.) berhasil atau semua digagalkan.
+    @Transactional
     public UserDTO registerNewUser(UserRegistrationDTO registrationDTO) {
-        // 1. Validasi apakah username sudah ada
+        // ... (Logika registrasi tidak berubah)
         if (userRepository.findByUsername(registrationDTO.getUsername()).isPresent()) {
             throw new IllegalStateException("Error: Username '" + registrationDTO.getUsername() + "' sudah digunakan.");
         }
 
-        // 2. Cari Role dan Jurusan dari database
         Role role = roleRepository.findById(registrationDTO.getRoleId())
                 .orElseThrow(() -> new RuntimeException("Error: Role dengan ID " + registrationDTO.getRoleId() + " tidak ditemukan."));
 
         Jurusan jurusan = jurusanRepository.findById(registrationDTO.getJurusanId())
                 .orElseThrow(() -> new RuntimeException("Error: Jurusan dengan ID " + registrationDTO.getJurusanId() + " tidak ditemukan."));
 
-        // 3. Buat dan simpan entitas User baru
         User newUser = new User();
         newUser.setUsername(registrationDTO.getUsername());
-        newUser.setPassword(passwordEncoder.encode(registrationDTO.getPassword())); // Enkripsi password
+        newUser.setPassword(passwordEncoder.encode(registrationDTO.getPassword()));
         newUser.setRole(role);
         User savedUser = userRepository.save(newUser);
 
-        // 4. Buat entitas Mahasiswa atau Dosen berdasarkan role
         if ("Mahasiswa".equalsIgnoreCase(role.getRoleName())) {
             if (registrationDTO.getNim() == null || registrationDTO.getNim().isBlank()) {
                 throw new IllegalArgumentException("Error: NIM tidak boleh kosong untuk role Mahasiswa.");
@@ -109,13 +106,25 @@ public class UserService {
         UserDTO userDTO = new UserDTO();
         userDTO.setUserId(user.getUserId());
         userDTO.setUsername(user.getUsername());
+        
         if (user.getRole() != null) {
             userDTO.setRoleName(user.getRole().getRoleName());
         }
+
+        // --- PERUBAHAN DI SINI ---
+        // Mengambil nama lengkap berdasarkan peran (role) pengguna
+        if (user.getMahasiswa() != null) {
+            userDTO.setNamaLengkap(user.getMahasiswa().getNamaLengkap());
+        } else if (user.getDosen() != null) {
+            userDTO.setNamaLengkap(user.getDosen().getNamaLengkap());
+        } else if ("Admin".equalsIgnoreCase(user.getRole().getRoleName())) {
+            userDTO.setNamaLengkap("Admin Sistem");
+        }
+        
         return userDTO;
     }
 
-        /**
+    /**
      * BARU: Mengubah password untuk pengguna yang sedang login.
      * @param username Username dari pengguna yang terotentikasi.
      * @param oldPassword Password lama yang diberikan oleh pengguna.
@@ -123,16 +132,14 @@ public class UserService {
      */
     @Transactional
     public void changePassword(String username, String oldPassword, String newPassword) {
-        // 1. Cari user berdasarkan username
+        // ... (Logika ganti password tidak berubah)
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User tidak ditemukan."));
 
-        // 2. Verifikasi password lama
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new IllegalArgumentException("Password lama yang Anda masukkan salah.");
         }
 
-        // 3. Enkripsi dan simpan password baru
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
