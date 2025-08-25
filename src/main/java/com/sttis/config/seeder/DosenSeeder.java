@@ -50,7 +50,7 @@ public class DosenSeeder {
         Jurusan pak = jurusanRepository.findAll().stream()
                 .filter(j -> j.getNamaJurusan().equals("S1 Pendidikan Agama Kristen")).findFirst().orElseThrow();
 
-        // Create Demo Dosen
+        // --- DATA LENGKAP UNTUK DOSEN DEMO ---
         User dosenDemoUser = new User();
         dosenDemoUser.setUsername("dosen");
         dosenDemoUser.setPassword(passwordEncoder.encode("dosen"));
@@ -64,8 +64,17 @@ public class DosenSeeder {
         dosenPA_Demo.setJurusan(teologi);
         dosenRepository.save(dosenPA_Demo);
         createdDosens.add(dosenPA_Demo);
+
+        // Biodata lengkap untuk dosen demo
+        BiodataDosen biodataDemo = new BiodataDosen();
+        biodataDemo.setDosen(dosenPA_Demo);
+        biodataDemo.setAlamat("Gedung A, Ruang A-203, Kampus STTIS Siau");
+        biodataDemo.setNomorTelepon("0812-3456-7890");
+        biodataDemo.setEmailPribadi("glenn.maramis@sttis.ac.id");
+        biodataDemo.setSpesialisasi("Sistem Informasi, Kecerdasan Buatan");
+        biodataDosenRepository.save(biodataDemo);
         
-        // Create Other Dosens
+        // --- DATA ACAK UNTUK DOSEN LAIN ---
         for (int i = 0; i < 5; i++) {
             User dosenUser = new User();
             dosenUser.setUsername(faker.name().username());
