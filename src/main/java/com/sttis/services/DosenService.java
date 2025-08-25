@@ -5,12 +5,13 @@ package com.sttis.services;
 import com.sttis.dto.DosenBiodataUpdateDTO;
 import com.sttis.dto.DosenDTO;
 import com.sttis.dto.DosenDashboardSummaryDTO;
+import com.sttis.dto.DosenProfileDTO; // <-- IMPORT BARU
 import com.sttis.dto.KelasDTO;
 import com.sttis.models.entities.BiodataDosen;
 import com.sttis.models.entities.Dosen;
 import com.sttis.models.entities.Kelas;
 import com.sttis.models.entities.User;
-import com.sttis.models.entities.enums.StatusPersetujuan; // <-- IMPORT BARU
+import com.sttis.models.entities.enums.StatusPersetujuan;
 import com.sttis.models.repos.BiodataDosenRepository;
 import com.sttis.models.repos.DosenRepository;
 import com.sttis.models.repos.KelasRepository;
@@ -31,8 +32,8 @@ public class DosenService {
 
     private final DosenRepository dosenRepository;
     private final BiodataDosenRepository biodataDosenRepository;
-    private final UserRepository userRepository;
-    private final KelasRepository kelasRepository;
+    private final UserRepository userRepository; 
+    private final KelasRepository kelasRepository; 
 
     public DosenService(DosenRepository dosenRepository, BiodataDosenRepository biodataDosenRepository, UserRepository userRepository, KelasRepository kelasRepository) {
         this.dosenRepository = dosenRepository;
@@ -52,6 +53,21 @@ public class DosenService {
         Dosen dosen = dosenRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Dosen dengan ID " + id + " tidak ditemukan."));
         return convertToDTO(dosen);
+    }
+    
+    /**
+     * BARU: Mengambil data profil lengkap untuk dosen yang sedang login.
+     */
+    @Transactional(readOnly = true)
+    public DosenProfileDTO getDosenProfile(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
+        Dosen dosen = user.getDosen();
+        if (dosen == null) {
+            throw new IllegalStateException("User ini bukan seorang dosen.");
+        }
+        
+        return convertToProfileDTO(dosen);
     }
 
     public BiodataDosen updateBiodata(Integer dosenId, DosenBiodataUpdateDTO biodataDTO) {
@@ -87,9 +103,6 @@ public class DosenService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * BARU: Mengambil data ringkasan untuk dashboard dosen.
-     */
     @Transactional(readOnly = true)
     public DosenDashboardSummaryDTO getDosenDashboardSummary(String username) {
         User user = userRepository.findByUsername(username)
@@ -99,13 +112,10 @@ public class DosenService {
             throw new IllegalStateException("User ini bukan seorang dosen.");
         }
         
-        // Hitung total SKS yang diampu
         int totalSksMengajar = dosen.getKelasMengajar().stream()
                 .mapToInt(kelas -> kelas.getMataKuliah().getSks())
                 .sum();
-
-        // --- LOGIKA BARU ---
-        // Hitung mahasiswa bimbingan yang memiliki KRS berstatus DIAJUKAN
+        
         long krsMenungguPersetujuan = dosen.getMahasiswaBimbingan().stream()
             .filter(mahasiswa -> 
                 mahasiswa.getKrsList().stream()
@@ -116,7 +126,7 @@ public class DosenService {
         dto.setTotalMahasiswaBimbingan(dosen.getMahasiswaBimbingan().size());
         dto.setTotalKelasMengajar(dosen.getKelasMengajar().size());
         dto.setTotalSksMengajar(totalSksMengajar);
-        dto.setKrsMenungguPersetujuan(krsMenungguPersetujuan); // <-- SET NILAI BARU
+        dto.setKrsMenungguPersetujuan(krsMenungguPersetujuan);
         
         return dto;
     }
@@ -145,6 +155,25 @@ public class DosenService {
         dto.setDosenPengajar(kelas.getDosen().getNamaLengkap());
         dto.setJadwal(kelas.getHari() + ", " + kelas.getJamMulai());
         dto.setRuangan(kelas.getRuangan());
+        return dto;
+    }
+
+    // --- HELPER METHOD BARU ---
+    private DosenProfileDTO convertToProfileDTO(Dosen dosen) {
+        DosenProfileDTO dto = new DosenProfileDTO();
+        dto.setNamaLengkap(dosen.getNamaLengkap());
+        dto.setNidn(dosen.getNidn());
+        if (dosen.getJurusan() != null) {
+            dto.setNamaJurusan(dosen.getJurusan().getNamaJurusan());
+        }
+
+        BiodataDosen biodata = dosen.getBiodata();
+        if (biodata != null) {
+            dto.setAlamat(biodata.getAlamat());
+            dto.setNomorTelepon(biodata.getNomorTelepon());
+            dto.setEmailPribadi(biodata.getEmailPribadi());
+            dto.setSpesialisasi(biodata.getSpesialisasi());
+        }
         return dto;
     }
 }

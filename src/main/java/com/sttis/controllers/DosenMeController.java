@@ -1,6 +1,7 @@
 package com.sttis.controllers;
 
-import com.sttis.dto.DosenDashboardSummaryDTO; // Impor DTO yang baru
+import com.sttis.dto.DosenDashboardSummaryDTO;
+import com.sttis.dto.DosenProfileDTO; // <-- IMPORT BARU
 import com.sttis.dto.KelasDTO;
 import com.sttis.services.DosenService;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +21,17 @@ public class DosenMeController {
     public DosenMeController(DosenService dosenService) {
         this.dosenService = dosenService;
     }
-
+    
     /**
-     * Endpoint untuk melihat daftar kelas yang diampu oleh dosen yang login.
-     * Method: GET
-     * URL: /api/dosen/me/kelas
+     * ENDPOINT BARU: Mengambil profil lengkap dosen yang login.
      */
+    @GetMapping("/profile")
+    public ResponseEntity<DosenProfileDTO> getMyProfile(Authentication authentication) {
+        String username = authentication.getName();
+        DosenProfileDTO profile = dosenService.getDosenProfile(username);
+        return ResponseEntity.ok(profile);
+    }
+
     @GetMapping("/kelas")
     public ResponseEntity<List<KelasDTO>> getKelasDiampu(Authentication authentication) {
         String username = authentication.getName();
@@ -33,11 +39,6 @@ public class DosenMeController {
         return ResponseEntity.ok(kelasList);
     }
 
-    /**
-     * ENDPOINT BARU: Mengambil data ringkasan untuk dashboard dosen yang login.
-     * Method: GET
-     * URL: /api/dosen/me/summary
-     */
     @GetMapping("/summary")
     public ResponseEntity<DosenDashboardSummaryDTO> getDashboardSummary(Authentication authentication) {
         String username = authentication.getName();
