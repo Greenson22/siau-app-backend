@@ -1,3 +1,4 @@
+// program/java-spring-boot/services/KelasService.java
 package com.sttis.services;
 
 import com.sttis.dto.MahasiswaDiKelasDTO;
@@ -30,9 +31,6 @@ public class KelasService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Mengambil daftar mahasiswa di kelas tertentu.
-     */
     @Transactional(readOnly = true)
     public List<MahasiswaDiKelasDTO> getMahasiswaDiKelas(Integer kelasId, String username) {
         Kelas kelas = getAndVerifyDosenKelas(kelasId, username);
@@ -40,6 +38,7 @@ public class KelasService {
         return krsRepository.findByKelas(kelas).stream()
                 .map(krs -> {
                     MahasiswaDiKelasDTO dto = new MahasiswaDiKelasDTO();
+                    dto.setKrsId(krs.getKrsId()); // <-- LOGIKA BARU
                     dto.setMahasiswaId(krs.getMahasiswa().getMahasiswaId());
                     dto.setNim(krs.getMahasiswa().getNim());
                     dto.setNamaLengkap(krs.getMahasiswa().getNamaLengkap());
@@ -47,10 +46,8 @@ public class KelasService {
                 })
                 .collect(Collectors.toList());
     }
-
-    /**
-     * Mengisi data presensi untuk satu pertemuan.
-     */
+    
+    // ... (sisa kode tidak berubah)
     public void isiPresensi(Integer kelasId, PresensiInputDTO input, String username) {
         Kelas kelas = getAndVerifyDosenKelas(kelasId, username);
 
@@ -61,7 +58,6 @@ public class KelasService {
             Krs krs = krsRepository.findByMahasiswaAndKelas(mahasiswa, kelas)
                     .orElseThrow(() -> new RuntimeException("Mahasiswa " + mahasiswa.getNamaLengkap() + " tidak terdaftar di kelas ini."));
 
-            // Cek duplikasi presensi
             if (presensiMahasiswaRepository.existsByKrsAndPertemuanKe(krs, input.getPertemuanKe())) {
                 throw new IllegalStateException("Presensi untuk " + mahasiswa.getNamaLengkap() + " di pertemuan ke-" + input.getPertemuanKe() + " sudah ada.");
             }
@@ -76,9 +72,6 @@ public class KelasService {
         }
     }
 
-    /**
-     * Helper untuk memvalidasi apakah dosen yang login adalah pengampu kelas.
-     */
     private Kelas getAndVerifyDosenKelas(Integer kelasId, String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));

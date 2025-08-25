@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class MahasiswaDiKelasDTO {
+    private Integer krsId; // <-- FIELD BARU
     private Integer mahasiswaId;
     private String nim;
     private String namaLengkap;
