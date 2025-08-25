@@ -1,6 +1,7 @@
 package com.sttis.dto;
 
 import lombok.Data;
+import java.math.BigDecimal; // <-- Import BigDecimal
 
 @Data
 public class KrsDTO {
@@ -12,4 +13,8 @@ public class KrsDTO {
     private String namaDosen;
     private String statusPersetujuan;
     private String jadwal; // Contoh: "Senin, 08:00"
+    
+    // --- PROPERTI BARU ---
+    private BigDecimal nilaiAkhir;
+    private String nilaiHuruf;
 }

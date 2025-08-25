@@ -1,4 +1,4 @@
-// program/java-spring-boot/com/sttis/services/DosenPaService.java
+// program/java-spring-boot/services/DosenPaService.java
 package com.sttis.services;
 
 import com.sttis.dto.KrsDTO;
@@ -25,18 +25,15 @@ public class DosenPaService {
     private final UserRepository userRepository;
     private final MahasiswaRepository mahasiswaRepository;
     private final KrsRepository krsRepository;
-    private final AkademikService akademikService; // <-- Injeksi Service Akademik
+    private final AkademikService akademikService;
 
     public DosenPaService(UserRepository userRepository, MahasiswaRepository mahasiswaRepository, KrsRepository krsRepository, AkademikService akademikService) {
         this.userRepository = userRepository;
         this.mahasiswaRepository = mahasiswaRepository;
         this.krsRepository = krsRepository;
-        this.akademikService = akademikService; // <-- Inisialisasi service
+        this.akademikService = akademikService;
     }
 
-    /**
-     * Mengambil daftar mahasiswa yang menjadi bimbingan Dosen PA.
-     */
     public List<MahasiswaDTO> getMahasiswaBimbingan(String username) {
         Dosen dosenPa = getDosenFromUsername(username);
         return dosenPa.getMahasiswaBimbingan().stream()
@@ -44,9 +41,6 @@ public class DosenPaService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Melihat KRS milik mahasiswa bimbingan.
-     */
     public List<KrsDTO> getKrsMahasiswaBimbingan(Integer mahasiswaId, String username) {
         Dosen dosenPa = getDosenFromUsername(username);
         Mahasiswa mahasiswa = mahasiswaRepository.findById(mahasiswaId)
@@ -61,20 +55,15 @@ public class DosenPaService {
                 .collect(Collectors.toList());
     }
     
-    /**
-     * BARU: Mengambil profil akademik lengkap untuk mahasiswa bimbingan tertentu.
-     */
     public MahasiswaAkademikProfileDTO getMahasiswaAkademikProfile(Integer mahasiswaId, String username) {
         Dosen dosenPa = getDosenFromUsername(username);
         Mahasiswa mahasiswa = mahasiswaRepository.findById(mahasiswaId)
                 .orElseThrow(() -> new RuntimeException("Mahasiswa dengan ID " + mahasiswaId + " tidak ditemukan."));
 
-        // Validasi: Pastikan mahasiswa tersebut adalah bimbingan Dosen PA yang login
         if (mahasiswa.getPembimbingAkademik() == null || !mahasiswa.getPembimbingAkademik().equals(dosenPa)) {
             throw new SecurityException("Anda bukan Dosen PA dari mahasiswa ini.");
         }
         
-        // Panggil service akademik untuk mendapatkan data
         MahasiswaAkademikProfileDTO dto = new MahasiswaAkademikProfileDTO();
         String mhsUsername = mahasiswa.getUser().getUsername();
         
@@ -132,6 +121,9 @@ public class DosenPaService {
         dto.setNamaDosen(krs.getKelas().getDosen().getNamaLengkap());
         dto.setStatusPersetujuan(krs.getStatusPersetujuan().name());
         dto.setJadwal(krs.getKelas().getHari() + ", " + krs.getKelas().getJamMulai());
+        // --- PENAMBAHAN LOGIKA ---
+        dto.setNilaiAkhir(krs.getNilaiAkhir());
+        dto.setNilaiHuruf(krs.getNilaiHuruf());
         return dto;
     }
 }
