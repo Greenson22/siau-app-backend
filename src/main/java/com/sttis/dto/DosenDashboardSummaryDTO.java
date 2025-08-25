@@ -7,4 +7,5 @@ public class DosenDashboardSummaryDTO {
     private Integer totalMahasiswaBimbingan;
     private Integer totalKelasMengajar;
     private Integer totalSksMengajar;
+    private Long krsMenungguPersetujuan; // <-- FIELD BARU
 }

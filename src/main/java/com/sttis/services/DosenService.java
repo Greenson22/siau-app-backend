@@ -1,4 +1,4 @@
-// program/java-spring-boot/com/sttis/services/DosenService.java
+// program/java-spring-boot/services/DosenService.java
 
 package com.sttis.services;
 
@@ -10,6 +10,7 @@ import com.sttis.models.entities.BiodataDosen;
 import com.sttis.models.entities.Dosen;
 import com.sttis.models.entities.Kelas;
 import com.sttis.models.entities.User;
+import com.sttis.models.entities.enums.StatusPersetujuan; // <-- IMPORT BARU
 import com.sttis.models.repos.BiodataDosenRepository;
 import com.sttis.models.repos.DosenRepository;
 import com.sttis.models.repos.KelasRepository;
@@ -30,8 +31,8 @@ public class DosenService {
 
     private final DosenRepository dosenRepository;
     private final BiodataDosenRepository biodataDosenRepository;
-    private final UserRepository userRepository; 
-    private final KelasRepository kelasRepository; 
+    private final UserRepository userRepository;
+    private final KelasRepository kelasRepository;
 
     public DosenService(DosenRepository dosenRepository, BiodataDosenRepository biodataDosenRepository, UserRepository userRepository, KelasRepository kelasRepository) {
         this.dosenRepository = dosenRepository;
@@ -86,7 +87,7 @@ public class DosenService {
                 .collect(Collectors.toList());
     }
 
-        /**
+    /**
      * BARU: Mengambil data ringkasan untuk dashboard dosen.
      */
     @Transactional(readOnly = true)
@@ -102,11 +103,20 @@ public class DosenService {
         int totalSksMengajar = dosen.getKelasMengajar().stream()
                 .mapToInt(kelas -> kelas.getMataKuliah().getSks())
                 .sum();
+
+        // --- LOGIKA BARU ---
+        // Hitung mahasiswa bimbingan yang memiliki KRS berstatus DIAJUKAN
+        long krsMenungguPersetujuan = dosen.getMahasiswaBimbingan().stream()
+            .filter(mahasiswa -> 
+                mahasiswa.getKrsList().stream()
+                    .anyMatch(krs -> krs.getStatusPersetujuan() == StatusPersetujuan.DIAJUKAN)
+            ).count();
         
         DosenDashboardSummaryDTO dto = new DosenDashboardSummaryDTO();
         dto.setTotalMahasiswaBimbingan(dosen.getMahasiswaBimbingan().size());
         dto.setTotalKelasMengajar(dosen.getKelasMengajar().size());
         dto.setTotalSksMengajar(totalSksMengajar);
+        dto.setKrsMenungguPersetujuan(krsMenungguPersetujuan); // <-- SET NILAI BARU
         
         return dto;
     }
