@@ -43,12 +43,12 @@ public class DataSeeder implements CommandLineRunner {
         
         // Panggil setiap seeder secara berurutan
         roleSeeder.seed();
-        jurusanSeeder.seed();
+        // jurusanSeeder.seed();
         userSeeder.seed(); // <-- Cukup panggil ini untuk semua data pengguna
 
         // Gunakan getter dari userSeeder untuk mendapatkan data yang dibutuhkan seeder lain
-        akademikSeeder.seed(userSeeder.getCreatedDosens(), userSeeder.getCreatedMahasiswas());
-        keuanganSeeder.seed(userSeeder.getCreatedMahasiswas());
+        // akademikSeeder.seed(userSeeder.getCreatedDosens(), userSeeder.getCreatedMahasiswas());
+        // keuanganSeeder.seed(userSeeder.getCreatedMahasiswas());
         logAndPengumumanSeeder.seed(userSeeder.getAdminUser());
 
         System.out.println("Seeder selesai dijalankan.");

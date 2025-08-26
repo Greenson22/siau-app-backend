@@ -25,8 +25,8 @@ public class UserSeeder {
 
     public void seed() {
         adminSeeder.seed();
-        dosenSeeder.seed();
-        mahasiswaSeeder.seed();
+        // dosenSeeder.seed();
+        // mahasiswaSeeder.seed();
 
         System.out.println("Seeder: Semua data User & Biodata berhasil dibuat.");
     }
