@@ -21,11 +21,12 @@ public class PaketMatakuliah {
     private Jurusan jurusan;
 
     @Column(nullable = false)
-    private Integer semesterKe;
+    private Integer semester; // Mengganti nama dari semesterKe
 
-    @Column(nullable = false)
-    private String tahunAkademik;
+    // Tahun akademik tidak lagi relevan per paket, tapi per kelas
+    // @Column(nullable = false)
+    // private String tahunAkademik;
 
-    @OneToMany(mappedBy = "paketMatakuliah")
+    @OneToMany(mappedBy = "paketMatakuliah", cascade = CascadeType.ALL, orphanRemoval = true) // Cascade & Orphan Removal
     private List<DetailPaketMatakuliah> detailPaket;
 }

@@ -46,8 +46,8 @@ public class PaketMatakuliahSeeder {
         PaketMatakuliah paket = new PaketMatakuliah();
         paket.setNamaPaket("Paket Matakuliah " + jurusan.getNamaJurusan() + " Semester " + semester);
         paket.setJurusan(jurusan);
-        paket.setSemesterKe(semester);
-        paket.setTahunAkademik(tahun);
+        paket.setSemester(semester);
+        // paket.setTahunAkademik(tahun); // Removed as per entity modification
         paketMatakuliahRepository.save(paket);
 
         for (String kodeMk : kodeMatkulList) {

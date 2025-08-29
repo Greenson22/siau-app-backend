@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class DetailPaketDTO {
-    private String kodeMk;
-    private String namaMatakuliah;
-    private Integer sks;
+    private Integer matkulId; // Menambahkan matkulId
+    private String kodeMatkul;
+    private String namaMatkul;
 }

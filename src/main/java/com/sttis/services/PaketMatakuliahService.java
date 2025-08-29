@@ -46,7 +46,7 @@ public class PaketMatakuliahService {
 
         // 3. Cari paket matakuliah di database
         // Anggap saja tahun akademik diambil yang paling baru, bisa disesuaikan
-        PaketMatakuliah paket = paketMatakuliahRepository.findByJurusanAndSemesterKe(jurusan, semesterAktif)
+        PaketMatakuliah paket = paketMatakuliahRepository.findByJurusanAndSemester(jurusan, semesterAktif)
                 .orElseThrow(() -> new RuntimeException("Paket matakuliah untuk semester " + semesterAktif + " tidak ditemukan."));
 
         // 4. Konversi ke DTO
@@ -55,17 +55,24 @@ public class PaketMatakuliahService {
 
     private PaketMatakuliahDTO convertToDto(PaketMatakuliah paket) {
         PaketMatakuliahDTO dto = new PaketMatakuliahDTO();
+        dto.setPaketId(paket.getPaketId());
         dto.setNamaPaket(paket.getNamaPaket());
+        dto.setSemester(paket.getSemester());
+        if (paket.getJurusan() != null) {
+            dto.setNamaJurusan(paket.getJurusan().getNamaJurusan());
+        }
 
         dto.setDetailPaket(paket.getDetailPaket().stream().map(detail -> {
             DetailPaketDTO detailDto = new DetailPaketDTO();
-            detailDto.setKodeMk(detail.getMataKuliah().getKodeMatkul());
-            detailDto.setNamaMatakuliah(detail.getMataKuliah().getNamaMatkul());
-            detailDto.setSks(detail.getMataKuliah().getSks());
+            detailDto.setMatkulId(detail.getMataKuliah().getMatkulId());
+            detailDto.setKodeMatkul(detail.getMataKuliah().getKodeMatkul());
+            detailDto.setNamaMatkul(detail.getMataKuliah().getNamaMatkul());
             return detailDto;
         }).collect(Collectors.toList()));
 
-        int totalSks = dto.getDetailPaket().stream().mapToInt(DetailPaketDTO::getSks).sum();
+        int totalSks = paket.getDetailPaket().stream()
+                .mapToInt(d -> d.getMataKuliah().getSks())
+                .sum();
         dto.setTotalSks(totalSks);
 
         return dto;

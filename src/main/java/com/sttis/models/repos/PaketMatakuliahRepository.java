@@ -9,5 +9,5 @@ import java.util.Optional; // <-- Tambahkan import ini
 @Repository
 public interface PaketMatakuliahRepository extends JpaRepository<PaketMatakuliah, Integer> {
     // Method baru untuk mencari paket berdasarkan jurusan dan semester
-    Optional<PaketMatakuliah> findByJurusanAndSemesterKe(Jurusan jurusan, Integer semesterKe);
+    Optional<PaketMatakuliah> findByJurusanAndSemester(Jurusan jurusan, Integer semester);
 }
