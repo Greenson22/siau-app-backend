@@ -2,7 +2,12 @@ package com.sttis.config.seeder;
 
 import com.sttis.models.entities.Jurusan;
 import com.sttis.models.repos.JurusanRepository;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class JurusanSeeder {
@@ -14,16 +19,31 @@ public class JurusanSeeder {
     }
 
     public void seed() {
-        Jurusan teologi = new Jurusan(); 
-        teologi.setNamaJurusan("S1 Teologi"); 
-        teologi.setFakultas("Fakultas Teologi"); 
-        jurusanRepository.save(teologi);
-        
-        Jurusan pak = new Jurusan(); 
-        pak.setNamaJurusan("S1 Pendidikan Agama Kristen"); 
-        pak.setFakultas("Fakultas Pendidikan"); 
-        jurusanRepository.save(pak);
+        // Membaca dan memproses file CSV
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(
+                new ClassPathResource("data/jurusan_naruto.csv").getInputStream(), StandardCharsets.UTF_8))) {
 
-        System.out.println("Seeder: Data Jurusan berhasil dibuat.");
+            // Lewati baris header
+            br.readLine();
+
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(",");
+                String namaJurusan = values[0];
+                String fakultas = values[1];
+
+                // Buat dan simpan entitas Jurusan baru
+                Jurusan jurusan = new Jurusan();
+                jurusan.setNamaJurusan(namaJurusan);
+                jurusan.setFakultas(fakultas);
+                jurusanRepository.save(jurusan);
+            }
+
+        } catch (Exception e) {
+            // Lemparkan exception jika terjadi error saat membaca file
+            throw new RuntimeException("Gagal membaca atau memproses file jurusan_naruto.csv: " + e.getMessage(), e);
+        }
+
+        System.out.println("Seeder: Data Jurusan dari file CSV berhasil dibuat.");
     }
 }

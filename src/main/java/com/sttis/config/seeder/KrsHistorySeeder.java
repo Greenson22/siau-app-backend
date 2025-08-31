@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Component
 public class KrsHistorySeeder {
@@ -28,18 +29,29 @@ public class KrsHistorySeeder {
     }
 
     public void seed(List<Dosen> dosens, List<Mahasiswa> mahasiswas) {
-        Mahasiswa mhsDemo = mahasiswas.stream().filter(m -> m.getNim().equals("20210118")).findFirst().orElseThrow();
-        List<MataKuliah> allMatkul = mataKuliahRepository.findAll();
+        // 1. Cari mahasiswa demo "Uzumaki Naruto" dengan NIM 20240101
+        Mahasiswa mhsDemo = mahasiswas.stream()
+                .filter(m -> m.getNim().equals("20240101"))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Mahasiswa demo dengan NIM 20240101 tidak ditemukan."));
 
-        MataKuliah firstOfSemester7 = allMatkul.stream().filter(mk -> mk.getKodeMatkul().equals("TEO701")).findFirst().orElseThrow();
-        List<MataKuliah> historyMatkul = allMatkul.subList(0, allMatkul.indexOf(firstOfSemester7));
+        // 2. Ambil beberapa mata kuliah yang sudah ada untuk dijadikan riwayat
+        List<String> historyMkCodes = List.of("NIN101", "NIN102", "TAI101");
+        List<MataKuliah> historyMatkul = mataKuliahRepository.findAll().stream()
+                .filter(mk -> historyMkCodes.contains(mk.getKodeMatkul()))
+                .collect(Collectors.toList());
+        
+        if (historyMatkul.size() != historyMkCodes.size()) {
+             System.out.println("Peringatan: Tidak semua mata kuliah untuk KrsHistorySeeder ditemukan.");
+        }
 
-        for(MataKuliah mk : historyMatkul) {
+        // 3. Buat kelas dan KRS histori untuk setiap mata kuliah tersebut
+        for (MataKuliah mk : historyMatkul) {
             Kelas kelasHistori = new Kelas();
             kelasHistori.setMataKuliah(mk);
             kelasHistori.setDosen(dosens.get(faker.number().numberBetween(0, dosens.size())));
-            kelasHistori.setTahunAkademik("HISTORI");
-            kelasHistori.setSemester(Semester.GANJIL); // Nilai dummy, tidak relevan
+            kelasHistori.setTahunAkademik("2023/2024"); // Tahun akademik lampau
+            kelasHistori.setSemester(Semester.GANJIL); // Semester lampau
             kelasRepository.save(kelasHistori);
 
             Krs krsHistori = new Krs();
@@ -50,6 +62,7 @@ public class KrsHistorySeeder {
             krsHistori.setNilaiAkhir(new BigDecimal(faker.number().randomDouble(2, 80, 95)));
             krsRepository.save(krsHistori);
         }
+        
         System.out.println("Seeder: Data Riwayat KRS berhasil dibuat.");
     }
 }

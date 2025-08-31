@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Component
 public class KelasSeeder {
@@ -26,21 +27,33 @@ public class KelasSeeder {
     }
 
     public void seed(List<Dosen> dosens) {
-        List<MataKuliah> allMatkul = mataKuliahRepository.findAll();
-        MataKuliah firstOfSemester7 = allMatkul.stream().filter(mk -> mk.getKodeMatkul().equals("TEO701")).findFirst().orElseThrow();
-        List<MataKuliah> currentMatkul = allMatkul.subList(allMatkul.indexOf(firstOfSemester7), allMatkul.size());
+        // 1. Definisikan kode mata kuliah yang ingin dibuatkan kelasnya untuk semester ini
+        List<String> currentSemesterMkCodes = List.of("NIN101", "TAI101", "GEN101", "MED201");
 
+        // 2. Ambil objek MataKuliah berdasarkan daftar kode di atas
+        List<MataKuliah> currentMatkul = mataKuliahRepository.findAll().stream()
+                .filter(mk -> currentSemesterMkCodes.contains(mk.getKodeMatkul()))
+                .collect(Collectors.toList());
+
+        if (currentMatkul.isEmpty()) {
+            System.out.println("Peringatan: Tidak ada mata kuliah yang cocok untuk dibuat kelasnya di KelasSeeder.");
+            return;
+        }
+
+        // 3. Buat entitas Kelas untuk setiap mata kuliah yang ditemukan
         for(MataKuliah mk : currentMatkul) {
              Kelas kelas = new Kelas();
             kelas.setMataKuliah(mk);
+            // Tetapkan Dosen secara acak
             kelas.setDosen(dosens.get(faker.number().numberBetween(0, dosens.size())));
             kelas.setTahunAkademik("2024/2025");
-            kelas.setSemester(Semester.GANJIL);
+            kelas.setSemester(Semester.GANJIL); // Anggap semester berjalan adalah Ganjil
             kelas.setHari(faker.options().option("Senin", "Selasa", "Rabu", "Kamis", "Jumat"));
             kelas.setJamMulai(LocalTime.of(faker.number().numberBetween(8, 15), 0));
             kelas.setRuangan("R." + faker.number().numberBetween(101, 305));
             kelasRepository.save(kelas);
         }
+        
         System.out.println("Seeder: Data Kelas untuk semester berjalan berhasil dibuat.");
     }
 }

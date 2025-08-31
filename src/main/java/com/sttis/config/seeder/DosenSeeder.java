@@ -12,9 +12,16 @@ import com.sttis.models.repos.JurusanRepository;
 import com.sttis.models.repos.RoleRepository;
 import com.sttis.models.repos.UserRepository;
 import lombok.Getter;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -44,60 +51,59 @@ public class DosenSeeder {
 
     public void seed() {
         Role dosenRole = roleRepository.findAll().stream()
-                .filter(r -> r.getRoleName().equals("Dosen")).findFirst().orElseThrow();
-        Jurusan teologi = jurusanRepository.findAll().stream()
-                .filter(j -> j.getNamaJurusan().equals("S1 Teologi")).findFirst().orElseThrow();
-        Jurusan pak = jurusanRepository.findAll().stream()
-                .filter(j -> j.getNamaJurusan().equals("S1 Pendidikan Agama Kristen")).findFirst().orElseThrow();
+                .filter(r -> r.getRoleName().equals("Dosen")).findFirst()
+                .orElseThrow(() -> new RuntimeException("Role 'Dosen' tidak ditemukan."));
+        List<Jurusan> allJurusan = jurusanRepository.findAll();
 
-        // --- DATA LENGKAP UNTUK DOSEN DEMO ---
-        User dosenDemoUser = new User();
-        dosenDemoUser.setUsername("dosen");
-        dosenDemoUser.setPassword(passwordEncoder.encode("dosen"));
-        dosenDemoUser.setRole(dosenRole);
-        userRepository.save(dosenDemoUser);
-
-        Dosen dosenPA_Demo = new Dosen();
-        dosenPA_Demo.setUser(dosenDemoUser);
-        dosenPA_Demo.setNamaLengkap("Dr. Glenn Maramis, S.Kom., M.CompSc");
-        dosenPA_Demo.setNidn("0912048801");
-        dosenPA_Demo.setJurusan(teologi);
-        dosenRepository.save(dosenPA_Demo);
-        createdDosens.add(dosenPA_Demo);
-
-        // Biodata lengkap untuk dosen demo
-        BiodataDosen biodataDemo = new BiodataDosen();
-        biodataDemo.setDosen(dosenPA_Demo);
-        biodataDemo.setAlamat("Gedung A, Ruang A-203, Kampus STTIS Siau");
-        biodataDemo.setNomorTelepon("0812-3456-7890");
-        biodataDemo.setEmailPribadi("glenn.maramis@sttis.ac.id");
-        biodataDemo.setSpesialisasi("Sistem Informasi, Kecerdasan Buatan");
-        biodataDosenRepository.save(biodataDemo);
-        
-        // --- DATA ACAK UNTUK DOSEN LAIN ---
-        for (int i = 0; i < 5; i++) {
-            User dosenUser = new User();
-            dosenUser.setUsername(faker.name().username());
-            dosenUser.setPassword(passwordEncoder.encode("dosen123"));
-            dosenUser.setRole(dosenRole);
-            User savedDosenUser = userRepository.save(dosenUser);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                new ClassPathResource("data/dosen_naruto.csv").getInputStream(), StandardCharsets.UTF_8))) {
             
-            Dosen dosen = new Dosen();
-            dosen.setUser(savedDosenUser);
-            dosen.setNamaLengkap(faker.name().fullName());
-            dosen.setNidn(faker.number().digits(10));
-            dosen.setJurusan(i % 2 == 0 ? teologi : pak);
-            Dosen savedDosen = dosenRepository.save(dosen);
-            createdDosens.add(savedDosen);
+            // Konfigurasi parser CSV untuk mengenali header
+            CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT
+                    .withHeader()
+                    .withIgnoreHeaderCase()
+                    .withTrim());
 
-            BiodataDosen biodataDosen = new BiodataDosen();
-            biodataDosen.setDosen(savedDosen);
-            biodataDosen.setAlamat(faker.address().fullAddress());
-            biodataDosen.setNomorTelepon(faker.phoneNumber().phoneNumber());
-            biodataDosen.setSpesialisasi(faker.job().field());
-            biodataDosenRepository.save(biodataDosen);
+            for (CSVRecord csvRecord : csvParser) {
+                String nidn = csvRecord.get("nidn");
+                String namaLengkap = csvRecord.get("nama");
+                String namaJurusan = csvRecord.get("jurusan");
+                String username = csvRecord.get("username");
+
+                Jurusan jurusan = allJurusan.stream()
+                        .filter(j -> j.getNamaJurusan().equalsIgnoreCase(namaJurusan) || j.getFakultas().equalsIgnoreCase(namaJurusan))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Jurusan '" + namaJurusan + "' untuk dosen '" + namaLengkap + "' tidak ditemukan."));
+
+                // Buat User untuk Dosen
+                User dosenUser = new User();
+                dosenUser.setUsername(username);
+                dosenUser.setPassword(passwordEncoder.encode("dosen")); // Password default
+                dosenUser.setRole(dosenRole);
+                User savedDosenUser = userRepository.save(dosenUser);
+
+                // Buat Entitas Dosen
+                Dosen dosen = new Dosen();
+                dosen.setUser(savedDosenUser);
+                dosen.setNamaLengkap(namaLengkap);
+                dosen.setNidn(nidn);
+                dosen.setJurusan(jurusan);
+                Dosen savedDosen = dosenRepository.save(dosen);
+                createdDosens.add(savedDosen);
+
+                // Buat Biodata Dosen (dengan data acak dari Faker)
+                BiodataDosen biodataDosen = new BiodataDosen();
+                biodataDosen.setDosen(savedDosen);
+                biodataDosen.setAlamat(faker.address().fullAddress());
+                biodataDosen.setNomorTelepon(faker.phoneNumber().phoneNumber());
+                biodataDosen.setSpesialisasi(faker.job().field());
+                biodataDosen.setEmailPribadi(username + "@sttis.ac.id");
+                biodataDosenRepository.save(biodataDosen);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Gagal memproses file dosen_naruto.csv: " + e.getMessage(), e);
         }
         
-        System.out.println("Seeder: Data Dosen berhasil dibuat.");
+        System.out.println("Seeder: Data Dosen dari file CSV berhasil dibuat.");
     }
 }

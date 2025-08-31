@@ -8,7 +8,15 @@ import com.sttis.models.repos.DetailPaketMatakuliahRepository;
 import com.sttis.models.repos.JurusanRepository;
 import com.sttis.models.repos.MataKuliahRepository;
 import com.sttis.models.repos.PaketMatakuliahRepository;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Component
@@ -27,37 +35,50 @@ public class PaketMatakuliahSeeder {
     }
 
     public void seed() {
-        Jurusan teologi = jurusanRepository.findAll().stream()
-                .filter(j -> j.getNamaJurusan().equals("S1 Teologi")).findFirst().orElseThrow();
+        List<Jurusan> allJurusan = jurusanRepository.findAll();
+        List<MataKuliah> allMataKuliah = mataKuliahRepository.findAll();
 
-        // Buat paket untuk setiap semester
-        createPaket(teologi, 1, "2021/2022", List.of("TEO101", "TEO102", "PAK101"));
-        createPaket(teologi, 2, "2021/2022", List.of("TEO201", "BIB201", "MIS201"));
-        createPaket(teologi, 3, "2022/2023", List.of("TEO301", "BIB301", "SEJ301"));
-        createPaket(teologi, 4, "2022/2023", List.of("TEO402", "PAK402", "PRA402"));
-        createPaket(teologi, 5, "2023/2024", List.of("TEO501", "BIB501", "MIS501"));
-        createPaket(teologi, 6, "2023/2024", List.of("TEO601", "BIB601", "PRA601"));
-        createPaket(teologi, 7, "2024/2025", List.of("TEO701", "PAK701", "BIB701", "PRA701", "SEJ701"));
-
-        System.out.println("Seeder: Data Paket Mata Kuliah berhasil dibuat.");
-    }
-
-    private void createPaket(Jurusan jurusan, int semester, String tahun, List<String> kodeMatkulList) {
-        PaketMatakuliah paket = new PaketMatakuliah();
-        paket.setNamaPaket("Paket Matakuliah " + jurusan.getNamaJurusan() + " Semester " + semester);
-        paket.setJurusan(jurusan);
-        paket.setSemester(semester);
-        // paket.setTahunAkademik(tahun); // Removed as per entity modification
-        paketMatakuliahRepository.save(paket);
-
-        for (String kodeMk : kodeMatkulList) {
-            MataKuliah mk = mataKuliahRepository.findAll().stream()
-                    .filter(m -> m.getKodeMatkul().equals(kodeMk)).findFirst().orElseThrow();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                new ClassPathResource("data/paket_krs_naruto.csv").getInputStream(), StandardCharsets.UTF_8))) {
             
-            DetailPaketMatakuliah detail = new DetailPaketMatakuliah();
-            detail.setPaketMatakuliah(paket);
-            detail.setMataKuliah(mk);
-            detailPaketMatakuliahRepository.save(detail);
+            CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT
+                    .withHeader().withIgnoreHeaderCase().withTrim());
+
+            for (CSVRecord csvRecord : csvParser) {
+                String namaPaket = csvRecord.get("nama_paket");
+                String namaJurusan = csvRecord.get("jurusan");
+                int semester = Integer.parseInt(csvRecord.get("semester"));
+                String[] kodeMkList = csvRecord.get("kode_mk_list").split(",");
+
+                Jurusan jurusan = allJurusan.stream()
+                        .filter(j -> j.getNamaJurusan().equalsIgnoreCase(namaJurusan))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Jurusan '" + namaJurusan + "' untuk paket '" + namaPaket + "' tidak ditemukan."));
+
+                // Buat Paket
+                PaketMatakuliah paket = new PaketMatakuliah();
+                paket.setNamaPaket(namaPaket);
+                paket.setJurusan(jurusan);
+                paket.setSemester(semester);
+                paketMatakuliahRepository.save(paket);
+
+                // Tambahkan Detail Paket (Mata Kuliah)
+                for (String kodeMk : kodeMkList) {
+                    MataKuliah mk = allMataKuliah.stream()
+                            .filter(m -> m.getKodeMatkul().equalsIgnoreCase(kodeMk.trim()))
+                            .findFirst()
+                            .orElseThrow(() -> new RuntimeException("Mata Kuliah dengan kode '" + kodeMk + "' tidak ditemukan."));
+                    
+                    DetailPaketMatakuliah detail = new DetailPaketMatakuliah();
+                    detail.setPaketMatakuliah(paket);
+                    detail.setMataKuliah(mk);
+                    detailPaketMatakuliahRepository.save(detail);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Gagal memproses file paket_krs_naruto.csv: " + e.getMessage(), e);
         }
+
+        System.out.println("Seeder: Data Paket Mata Kuliah dari file CSV berhasil dibuat.");
     }
 }

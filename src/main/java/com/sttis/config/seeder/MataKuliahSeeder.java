@@ -4,7 +4,16 @@ import com.sttis.models.entities.Jurusan;
 import com.sttis.models.entities.MataKuliah;
 import com.sttis.models.repos.JurusanRepository;
 import com.sttis.models.repos.MataKuliahRepository;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Component
 public class MataKuliahSeeder {
@@ -18,55 +27,39 @@ public class MataKuliahSeeder {
     }
 
     public void seed() {
-        Jurusan teologi = jurusanRepository.findAll().stream()
-                .filter(j -> j.getNamaJurusan().equals("S1 Teologi")).findFirst().orElseThrow();
+        List<Jurusan> allJurusan = jurusanRepository.findAll();
 
-        // Semester 1
-        createMatkul("TEO101", "Pengantar Perjanjian Lama", 3, teologi);
-        createMatkul("TEO102", "Pengantar Perjanjian Baru", 3, teologi);
-        createMatkul("PAK101", "Dasar-Dasar PAK", 2, teologi);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                new ClassPathResource("data/matakuliah_naruto.csv").getInputStream(), StandardCharsets.UTF_8))) {
 
-        // Semester 2
-        createMatkul("TEO201", "Teologi Sistematika I", 3, teologi);
-        createMatkul("BIB201", "Bahasa Yunani I", 2, teologi);
-        createMatkul("MIS201", "Misiologi I", 2, teologi);
+            CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT
+                    .withHeader()
+                    .withIgnoreHeaderCase()
+                    .withTrim());
 
-        // Semester 3
-        createMatkul("TEO301", "Teologi Sistematika II", 3, teologi);
-        createMatkul("BIB301", "Bahasa Ibrani I", 2, teologi);
-        createMatkul("SEJ301", "Sejarah Gereja Awal", 3, teologi);
+            for (CSVRecord csvRecord : csvParser) {
+                String kodeMk = csvRecord.get("kode_mk");
+                String namaMk = csvRecord.get("nama_mk");
+                int sks = Integer.parseInt(csvRecord.get("sks"));
+                String namaJurusan = csvRecord.get("jurusan");
 
-        // Semester 4
-        createMatkul("TEO402", "Hermeneutik", 3, teologi);
-        createMatkul("PAK402", "Psikologi Perkembangan", 3, teologi);
-        createMatkul("PRA402", "Homiletika I", 2, teologi);
-        
-        // Semester 5
-        createMatkul("TEO501", "Etika Kristen", 3, teologi);
-        createMatkul("BIB501", "Eksegesis Perjanjian Lama", 3, teologi);
-        createMatkul("MIS501", "Apologetika", 2, teologi);
+                Jurusan jurusan = allJurusan.stream()
+                        .filter(j -> j.getNamaJurusan().equalsIgnoreCase(namaJurusan))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Jurusan '" + namaJurusan + "' untuk mata kuliah '" + namaMk + "' tidak ditemukan."));
 
-        // Semester 6
-        createMatkul("TEO601", "Dogmatika", 3, teologi);
-        createMatkul("BIB601", "Eksegesis Perjanjian Baru", 3, teologi);
-        createMatkul("PRA601", "Pastoral Konseling", 2, teologi);
+                MataKuliah mk = new MataKuliah();
+                mk.setKodeMatkul(kodeMk);
+                mk.setNamaMatkul(namaMk);
+                mk.setSks(sks);
+                mk.setJurusan(jurusan);
+                mataKuliahRepository.save(mk);
+            }
 
-        // Semester 7
-        createMatkul("TEO701", "Teologi Kontemporer", 3, teologi);
-        createMatkul("PAK701", "Pendidikan Kristen Lanjutan", 3, teologi);
-        createMatkul("BIB701", "Eksegesis Lanjutan", 3, teologi);
-        createMatkul("PRA701", "Praktik Pelayanan Lanjutan", 2, teologi);
-        createMatkul("SEJ701", "Sejarah Gereja Modern", 2, teologi);
-        
-        System.out.println("Seeder: Data Mata Kuliah berhasil dibuat.");
-    }
+        } catch (Exception e) {
+            throw new RuntimeException("Gagal memproses file matakuliah_naruto.csv: " + e.getMessage(), e);
+        }
 
-    private void createMatkul(String kode, String nama, int sks, Jurusan jurusan) {
-        MataKuliah mk = new MataKuliah();
-        mk.setKodeMatkul(kode);
-        mk.setNamaMatkul(nama);
-        mk.setSks(sks);
-        mk.setJurusan(jurusan);
-        mataKuliahRepository.save(mk);
+        System.out.println("Seeder: Data Mata Kuliah dari file CSV berhasil dibuat.");
     }
 }

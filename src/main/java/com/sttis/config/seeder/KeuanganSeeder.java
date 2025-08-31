@@ -33,7 +33,7 @@ public class KeuanganSeeder {
     }
 
     public void seed(List<Mahasiswa> createdMahasiswas) {
-        // 1. Create Komponen Biaya
+        // 1. Buat Komponen Biaya
         KomponenBiaya spp = new KomponenBiaya();
         spp.setNamaKomponen("Biaya Kuliah Bulanan");
         spp.setJenisBiaya(JenisBiaya.BULANAN);
@@ -44,12 +44,17 @@ public class KeuanganSeeder {
         pembangunan.setJenisBiaya(JenisBiaya.SEKALI_BAYAR);
         komponenBiayaRepository.save(pembangunan);
 
-        // 2. Create Tagihan and Pembayaran for each Mahasiswa
-        Mahasiswa mhsDemo = createdMahasiswas.stream().filter(m -> m.getNim().equals("20210118")).findFirst().orElseThrow();
+        // 2. Cari mahasiswa demo "Uzumaki Naruto"
+        Mahasiswa mhsDemo = createdMahasiswas.stream()
+                .filter(m -> m.getNim().equals("20240101")) // <-- PERUBAHAN DI SINI
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Mahasiswa demo (Uzumaki Naruto) tidak ditemukan untuk seeder keuangan."));
+
+        // 3. Buat Tagihan dan Pembayaran untuk setiap Mahasiswa
         for (Mahasiswa mhs : createdMahasiswas) {
             TagihanMahasiswa tagihan = new TagihanMahasiswa();
             tagihan.setMahasiswa(mhs);
-            tagihan.setDeskripsiTagihan("Tagihan Semester Ganjil 2024/2025");
+            tagihan.setDeskripsiTagihan("Tagihan Misi Peringkat-S Semester Ganjil");
             tagihan.setTanggalJatuhTempo(LocalDate.now().plusMonths(1));
             tagihan.setStatus(StatusTagihan.BELUM_LUNAS);
             tagihan.setTotalTagihan(new BigDecimal("3500000"));
@@ -61,12 +66,13 @@ public class KeuanganSeeder {
             detail.setJumlah(new BigDecimal("3500000"));
             detailTagihanRepository.save(detail);
 
-            if (mhs.equals(mhsDemo) || faker.bool().bool()) { // Ensure demo mahasiswa has paid
+            // Pastikan mahasiswa demo (Naruto) sudah membayar, dan beberapa lainnya secara acak
+            if (mhs.equals(mhsDemo) || faker.bool().bool()) { 
                 Pembayaran bayar = new Pembayaran();
                 bayar.setTagihan(savedTagihan);
                 bayar.setJumlahBayar(new BigDecimal("3500000"));
                 bayar.setTanggalBayar(java.time.LocalDateTime.now());
-                bayar.setMetodePembayaran("Transfer Bank");
+                bayar.setMetodePembayaran("Transfer Gulungan Naga");
                 bayar.setStatusVerifikasi(StatusVerifikasi.BERHASIL);
                 pembayaranRepository.save(bayar);
                 savedTagihan.setStatus(StatusTagihan.LUNAS);

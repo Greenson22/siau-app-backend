@@ -15,9 +15,13 @@ import com.sttis.models.repos.MahasiswaRepository;
 import com.sttis.models.repos.RoleRepository;
 import com.sttis.models.repos.UserRepository;
 import lombok.Getter;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,77 +53,73 @@ public class MahasiswaSeeder {
     }
 
     public void seed() {
+        // --- 1. Persiapan Data Awal ---
         Role mahasiswaRole = roleRepository.findAll().stream()
                 .filter(r -> r.getRoleName().equals("Mahasiswa")).findFirst().orElseThrow();
-        Jurusan teologi = jurusanRepository.findAll().stream()
-                .filter(j -> j.getNamaJurusan().equals("S1 Teologi")).findFirst().orElseThrow();
-        Jurusan pak = jurusanRepository.findAll().stream()
-                .filter(j -> j.getNamaJurusan().equals("S1 Pendidikan Agama Kristen")).findFirst().orElseThrow();
-        Dosen dosenPA_Demo = dosenRepository.findAll().stream()
-                .filter(d -> d.getNidn().equals("0912048801")).findFirst().orElseThrow();
+        List<Jurusan> allJurusan = jurusanRepository.findAll();
         List<Dosen> allDosens = dosenRepository.findAll();
 
-        // Create Demo Mahasiswa (NIM tetap 20210118)
-        User mhsDemoUser = new User();
-        mhsDemoUser.setUsername("20210118");
-        mhsDemoUser.setPassword(passwordEncoder.encode("password"));
-        mhsDemoUser.setRole(mahasiswaRole);
-        userRepository.save(mhsDemoUser);
-        
-        Mahasiswa mhsDemo = new Mahasiswa();
-        mhsDemo.setUser(mhsDemoUser);
-        mhsDemo.setNamaLengkap("Frendy Gerung");
-        mhsDemo.setNim("20210118");
-        mhsDemo.setJurusan(teologi);
-        mhsDemo.setStatus(StatusMahasiswa.AKTIF);
-        mhsDemo.setPembimbingAkademik(dosenPA_Demo);
-        mahasiswaRepository.save(mhsDemo);
-        createdMahasiswas.add(mhsDemo);
-        
-        BiodataMahasiswa biodataMhsDemo = new BiodataMahasiswa();
-        biodataMhsDemo.setMahasiswa(mhsDemo);
-        biodataMhsDemo.setAlamat("Jl. Raya Tahuna-Manganitu, Siau Timur");
-        biodataMhsDemo.setNomorTelepon("085298937694");
-        biodataMhsDemo.setTempatLahir("Manado");
-        biodataMhsDemo.setTanggalLahir(LocalDate.of(2003, 8, 17));
-        biodataMhsDemo.setJenisKelamin("Laki-laki");
-        biodataMahasiswaRepository.save(biodataMhsDemo);
+        if (allDosens.isEmpty()) {
+            throw new IllegalStateException("Seeder Dosen harus dijalankan sebelum MahasiswaSeeder.");
+        }
 
-        // --- PERUBAHAN DI SINI ---
-        // Create Other Mahasiswa with sequential NIM as username
-        long nimCounter = 20210119L; // <-- Mulai dari NIM 20210119
-
-        for (int i = 0; i < 10; i++) {
-            String currentNim = String.valueOf(nimCounter);
+        // --- 2. Baca dan Proses File CSV ---
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(
+                new ClassPathResource("data/mahasiswa_naruto.csv").getInputStream(), StandardCharsets.UTF_8))) {
             
-            User mhsUser = new User();
-            mhsUser.setUsername(currentNim); // <-- Gunakan NIM sebagai username
-            mhsUser.setPassword(passwordEncoder.encode("mahasiswa123"));
-            mhsUser.setRole(mahasiswaRole);
-            User savedMhsUser = userRepository.save(mhsUser);
+            // Lewati header
+            br.readLine();
 
-            Mahasiswa mahasiswa = new Mahasiswa();
-            mahasiswa.setUser(savedMhsUser);
-            mahasiswa.setNamaLengkap(faker.name().fullName());
-            mahasiswa.setNim(currentNim); // <-- Gunakan NIM yang sama
-            mahasiswa.setJurusan(i % 2 == 0 ? teologi : pak);
-            mahasiswa.setStatus(StatusMahasiswa.AKTIF);
-            mahasiswa.setPembimbingAkademik(allDosens.get(faker.number().numberBetween(0, allDosens.size())));
-            Mahasiswa savedMhs = mahasiswaRepository.save(mahasiswa);
-            createdMahasiswas.add(savedMhs);
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(",");
+                String nim = values[0];
+                String namaLengkap = values[1];
+                String namaJurusan = values[2];
 
-            BiodataMahasiswa biodataMhs = new BiodataMahasiswa();
-            biodataMhs.setMahasiswa(savedMhs);
-            biodataMhs.setAlamat(faker.address().fullAddress());
-            biodataMhs.setNomorTelepon(faker.phoneNumber().phoneNumber());
-            biodataMhs.setTempatLahir(faker.address().city());
-            biodataMhs.setTanggalLahir(faker.date().birthday().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-            biodataMhs.setJenisKelamin(faker.options().option("Laki-laki", "Perempuan")); 
-            biodataMahasiswaRepository.save(biodataMhs);
+                // Cari jurusan yang sesuai
+                Jurusan jurusan = allJurusan.stream()
+                        .filter(j -> j.getNamaJurusan().equalsIgnoreCase(namaJurusan))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Jurusan '" + namaJurusan + "' tidak ditemukan di database."));
 
-            nimCounter++; // <-- Naikkan NIM untuk mahasiswa berikutnya
+                // --- 3. Buat Entitas untuk setiap baris ---
+                
+                // Buat User
+                User mhsUser = new User();
+                mhsUser.setUsername(nim); // Gunakan NIM sebagai username
+                mhsUser.setPassword(passwordEncoder.encode("password")); // Password default
+                mhsUser.setRole(mahasiswaRole);
+                User savedMhsUser = userRepository.save(mhsUser);
+
+                // Buat Mahasiswa
+                Mahasiswa mahasiswa = new Mahasiswa();
+                mahasiswa.setUser(savedMhsUser);
+                mahasiswa.setNamaLengkap(namaLengkap);
+                mahasiswa.setNim(nim);
+                mahasiswa.setJurusan(jurusan);
+                mahasiswa.setStatus(StatusMahasiswa.AKTIF);
+                // Tetapkan Dosen PA secara acak dari daftar yang ada
+                mahasiswa.setPembimbingAkademik(allDosens.get(faker.number().numberBetween(0, allDosens.size())));
+                Mahasiswa savedMhs = mahasiswaRepository.save(mahasiswa);
+                createdMahasiswas.add(savedMhs);
+
+                // Buat Biodata Mahasiswa (dengan data acak dari Faker)
+                BiodataMahasiswa biodataMhs = new BiodataMahasiswa();
+                biodataMhs.setMahasiswa(savedMhs);
+                biodataMhs.setAlamat(faker.address().fullAddress());
+                biodataMhs.setNomorTelepon(faker.phoneNumber().phoneNumber());
+                biodataMhs.setTempatLahir(faker.address().city());
+                biodataMhs.setTanggalLahir(LocalDate.of(2003, faker.number().numberBetween(1, 12), faker.number().numberBetween(1, 28)));
+                biodataMhs.setJenisKelamin(faker.options().option("Laki-laki", "Perempuan"));
+                biodataMahasiswaRepository.save(biodataMhs);
+            }
+
+        } catch (Exception e) {
+            // Jika terjadi error saat membaca file, lemparkan sebagai runtime exception
+            throw new RuntimeException("Gagal membaca atau memproses file CSV: " + e.getMessage(), e);
         }
         
-        System.out.println("Seeder: Data Mahasiswa berhasil dibuat.");
+        System.out.println("Seeder: Data Mahasiswa dari mahasiswa_naruto.csv berhasil dibuat.");
     }
 }
