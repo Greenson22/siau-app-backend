@@ -1,3 +1,4 @@
+// java-spring-boot/com/sttis/config/seeder/DosenSeeder.java
 package com.sttis.config.seeder;
 
 import com.github.javafaker.Faker;
@@ -58,7 +59,6 @@ public class DosenSeeder {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
                 new ClassPathResource("data/dosen_naruto.csv").getInputStream(), StandardCharsets.UTF_8))) {
             
-            // Konfigurasi parser CSV untuk mengenali header
             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT
                     .withHeader()
                     .withIgnoreHeaderCase()
@@ -70,10 +70,12 @@ public class DosenSeeder {
                 String namaJurusan = csvRecord.get("jurusan");
                 String username = csvRecord.get("username");
 
+                // --- PERBAIKAN DI SINI ---
                 Jurusan jurusan = allJurusan.stream()
-                        .filter(j -> j.getNamaJurusan().equalsIgnoreCase(namaJurusan) || j.getFakultas().equalsIgnoreCase(namaJurusan))
+                        .filter(j -> j.getNamaJurusan().equalsIgnoreCase(namaJurusan) 
+                                  || j.getFakultas().getNamaFakultas().equalsIgnoreCase(namaJurusan))
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Jurusan '" + namaJurusan + "' untuk dosen '" + namaLengkap + "' tidak ditemukan."));
+                        .orElseThrow(() -> new RuntimeException("Jurusan atau Fakultas '" + namaJurusan + "' untuk dosen '" + namaLengkap + "' tidak ditemukan."));
 
                 // Buat User untuk Dosen
                 User dosenUser = new User();

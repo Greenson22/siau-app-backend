@@ -1,9 +1,10 @@
-// program/java-spring-boot/com/sttis/services/JurusanService.java
-
+// java-spring-boot/com/sttis/services/JurusanService.java
 package com.sttis.services;
 
 import com.sttis.dto.JurusanDTO;
+import com.sttis.models.entities.Fakultas;
 import com.sttis.models.entities.Jurusan;
+import com.sttis.models.repos.FakultasRepository;
 import com.sttis.models.repos.JurusanRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,36 +17,27 @@ import java.util.stream.Collectors;
 public class JurusanService {
 
     private final JurusanRepository jurusanRepository;
+    private final FakultasRepository fakultasRepository; // <-- DEPENDENCY BARU
 
-    public JurusanService(JurusanRepository jurusanRepository) {
+    public JurusanService(JurusanRepository jurusanRepository, FakultasRepository fakultasRepository) {
         this.jurusanRepository = jurusanRepository;
+        this.fakultasRepository = fakultasRepository; // <-- INJEKSI
     }
 
-    /**
-     * Membuat jurusan baru berdasarkan data dari DTO.
-     * @param jurusanDTO Data untuk jurusan baru.
-     * @return JurusanDTO dari entitas yang baru disimpan.
-     */
     public JurusanDTO createJurusan(JurusanDTO jurusanDTO) {
-        if (jurusanDTO.getNamaJurusan() == null || jurusanDTO.getNamaJurusan().isBlank()) {
-            throw new IllegalArgumentException("Nama jurusan tidak boleh kosong.");
-        }
-        if (jurusanDTO.getFakultas() == null || jurusanDTO.getFakultas().isBlank()) {
-            throw new IllegalArgumentException("Nama fakultas tidak boleh kosong.");
-        }
+        // --- LOGIKA DIPERBARUI ---
+        Fakultas fakultas = fakultasRepository.findById(jurusanDTO.getFakultasId())
+                .orElseThrow(() -> new RuntimeException("Fakultas dengan ID " + jurusanDTO.getFakultasId() + " tidak ditemukan."));
 
         Jurusan jurusan = new Jurusan();
         jurusan.setNamaJurusan(jurusanDTO.getNamaJurusan());
-        jurusan.setFakultas(jurusanDTO.getFakultas());
+        jurusan.setFakultas(fakultas); // Set objek Fakultas
         
         Jurusan savedJurusan = jurusanRepository.save(jurusan);
         return convertToDTO(savedJurusan);
     }
 
-    /**
-     * Mengambil semua data jurusan dari database.
-     * @return Daftar semua JurusanDTO.
-     */
+    @Transactional(readOnly = true)
     public List<JurusanDTO> getAllJurusan() {
         return jurusanRepository.findAll()
                 .stream()
@@ -53,33 +45,29 @@ public class JurusanService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Mengubah data jurusan yang ada.
-     * @param id ID jurusan yang akan diubah.
-     * @param jurusanDTO Data baru untuk jurusan.
-     * @return JurusanDTO dari entitas yang berhasil diubah.
-     */
     public JurusanDTO updateJurusan(Integer id, JurusanDTO jurusanDTO) {
+        // --- LOGIKA DIPERBARUI ---
         Jurusan jurusan = jurusanRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Jurusan dengan ID " + id + " tidak ditemukan."));
+        Fakultas fakultas = fakultasRepository.findById(jurusanDTO.getFakultasId())
+                .orElseThrow(() -> new RuntimeException("Fakultas dengan ID " + jurusanDTO.getFakultasId() + " tidak ditemukan."));
 
         jurusan.setNamaJurusan(jurusanDTO.getNamaJurusan());
-        jurusan.setFakultas(jurusanDTO.getFakultas());
+        jurusan.setFakultas(fakultas);
         
         Jurusan updatedJurusan = jurusanRepository.save(jurusan);
         return convertToDTO(updatedJurusan);
     }
 
-    /**
-     * Helper method untuk mengubah entitas Jurusan menjadi JurusanDTO.
-     * @param jurusan Entitas Jurusan.
-     * @return Objek JurusanDTO.
-     */
     private JurusanDTO convertToDTO(Jurusan jurusan) {
+        // --- LOGIKA DIPERBARUI ---
         JurusanDTO dto = new JurusanDTO();
         dto.setJurusanId(jurusan.getJurusanId());
         dto.setNamaJurusan(jurusan.getNamaJurusan());
-        dto.setFakultas(jurusan.getFakultas());
+        if (jurusan.getFakultas() != null) {
+            dto.setFakultasId(jurusan.getFakultas().getFakultasId());
+            dto.setNamaFakultas(jurusan.getFakultas().getNamaFakultas());
+        }
         return dto;
     }
 }

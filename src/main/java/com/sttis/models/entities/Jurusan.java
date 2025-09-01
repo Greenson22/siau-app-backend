@@ -1,3 +1,4 @@
+// java-spring-boot/com/sttis/models/entities/Jurusan.java
 package com.sttis.models.entities;
 
 import jakarta.persistence.*;
@@ -16,8 +17,10 @@ public class Jurusan {
     @Column(nullable = false)
     private String namaJurusan;
 
-    @Column(nullable = false)
-    private String fakultas;
+    // --- PERUBAHAN ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fakultas_id", nullable = false)
+    private Fakultas fakultas;
     
     // Relasi ke entitas lain
     @OneToMany(mappedBy = "jurusan")
