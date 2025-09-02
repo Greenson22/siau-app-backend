@@ -1,11 +1,12 @@
 kode_mk,nama_mk,sks,jurusan
-NIN101,Dasar Pengendalian Chakra,3,S1 Ninjutsu
-NIN102,Teknik Kloning Bayangan,3,S1 Ninjutsu
-GEN101,Ilusi Dasar & Disorientasi,2,S1 Genjutsu
-TAI101,Fundamental Pukulan & Tendangan,3,S1 Taijutsu
-TAI201,Delapan Gerbang Batin: Pengantar,3,S1 Taijutsu
-MED201,Anatomi Shinobi & Pertolongan Pertama,3,S1 Medis Ninja
-MED202,Teknik Ekstraksi Racun,2,S1 Medis Ninja
-INT201,Pengintaian & Penyamaran,2,D3 Intelijen Anbu
-STR301,Analisis Taktik Formasi Ino-Shika-Cho,3,S1 Strategi Perang
-SEG301,Dasar-Dasar Fuinjutsu,2,S1 Teknik Segel
+NIN101,Dasar-dasar Ninjutsu,3,S1 Ninjutsu
+NIN102,Teknik Kloning Bayangan,4,S1 Ninjutsu
+TAI101,Taijutsu Dasar,2,S1 Taijutsu
+TAI201,Teknik Tendangan Konoha,3,S1 Taijutsu
+GEN101,Pengantar Genjutsu,3,S1 Genjutsu
+MED201,Ilmu Medis Ninja Dasar,4,S1 Medis Ninja
+MED202,Teknik Penyembuhan Jarak Jauh,3,S1 Medis Ninja
+INT201,Dasar Intelijen & Pengintaian,2,S1 Strategi Perang
+STR301,Formasi Ino-Shika-Cho,3,S1 Strategi Perang
+SEG301,Pengenalan Teknik Segel,3,S1 Teknik Segel
+NIN201,Transformasi & Penyamaran,3,S1 Ninjutsu

@@ -1,5 +1,7 @@
 nama_paket,jurusan,semester,kode_mk_list
-Paket Dasar Shinobi,S1 Ninjutsu,1,"NIN101,NIN102"
+Paket Dasar Shinobi,S1 Ninjutsu,1,"NIN101,NIN102,TAI101"
+Paket Chunin Awal,S1 Ninjutsu,2,"NIN201,GEN101,TAI201"
+Paket Taktik Anbu,S1 Ninjutsu,3,"INT201,STR301"
 Paket Genin Lanjutan,S1 Taijutsu,1,"TAI101,TAI201"
 Paket Medis Awal,S1 Medis Ninja,2,"MED201,MED202"
 Paket Taktik & Strategi,S1 Strategi Perang,3,"INT201,STR301"
