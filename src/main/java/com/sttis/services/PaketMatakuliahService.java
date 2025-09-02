@@ -1,3 +1,4 @@
+// program/java-spring-boot/com/sttis/services/PaketMatakuliahService.java
 package com.sttis.services;
 
 import com.sttis.dto.DetailPaketDTO;
@@ -67,6 +68,7 @@ public class PaketMatakuliahService {
             detailDto.setMatkulId(detail.getMataKuliah().getMatkulId());
             detailDto.setKodeMatkul(detail.getMataKuliah().getKodeMatkul());
             detailDto.setNamaMatkul(detail.getMataKuliah().getNamaMatkul());
+            detailDto.setSks(detail.getMataKuliah().getSks()); // Data SKS ditambahkan di sini
             return detailDto;
         }).collect(Collectors.toList()));
 

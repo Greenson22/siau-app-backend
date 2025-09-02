@@ -1,3 +1,4 @@
+// program/java-spring-boot/com/sttis/services/PaketKrsAdminService.java
 package com.sttis.services;
 
 import com.sttis.dto.DetailPaketDTO;
@@ -101,9 +102,10 @@ public class PaketKrsAdminService {
 
         List<DetailPaketDTO> detailDtos = paket.getDetailPaket().stream().map(detail -> {
             DetailPaketDTO detailDto = new DetailPaketDTO();
-            detailDto.setMatkulId(detail.getMataKuliah().getMatkulId()); // Menambahkan matkulId
+            detailDto.setMatkulId(detail.getMataKuliah().getMatkulId());
             detailDto.setKodeMatkul(detail.getMataKuliah().getKodeMatkul());
             detailDto.setNamaMatkul(detail.getMataKuliah().getNamaMatkul());
+            detailDto.setSks(detail.getMataKuliah().getSks()); // Data SKS ditambahkan di sini
             return detailDto;
         }).collect(Collectors.toList());
 

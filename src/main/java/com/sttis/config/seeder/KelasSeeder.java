@@ -27,8 +27,10 @@ public class KelasSeeder {
     }
 
     public void seed(List<Dosen> dosens) {
-        // 1. Definisikan kode mata kuliah yang ingin dibuatkan kelasnya untuk semester ini
-        List<String> currentSemesterMkCodes = List.of("NIN101", "TAI101", "GEN101", "MED201");
+        // --- PERUBAHAN DI SINI ---
+        // 1. Definisikan semua kode mata kuliah yang harus memiliki kelas semester ini
+        //    (Tambahkan "NIN102" ke dalam daftar)
+        List<String> currentSemesterMkCodes = List.of("NIN101", "NIN102", "TAI101", "GEN101", "MED201");
 
         // 2. Ambil objek MataKuliah berdasarkan daftar kode di atas
         List<MataKuliah> currentMatkul = mataKuliahRepository.findAll().stream()
